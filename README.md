@@ -1,2 +1,2 @@
 # Server
-Flask based REST API
+Flask based REST API for ARgorithm

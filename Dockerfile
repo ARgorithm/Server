@@ -4,4 +4,4 @@ COPY ./app/requirements.txt ./
 RUN pip install -U pip && \
     pip install -r requirements.txt
 COPY ./app /app
-RUN ls && pytest /app/tests
+RUN pytest /app/tests
