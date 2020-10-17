@@ -70,7 +70,7 @@ class ArgorithmManager():
             count = 1
             final_filename = filename
             while os.path.isfile(os.path.join(UPLOAD_FOLDER, final_filename)):
-                final_filename = filename[:-2]+f"({count})"+filename[-2:]
+                final_filename = filename[:-3]+f"_{count}"+filename[-3:]
                 count+=1
             file.save(os.path.join(UPLOAD_FOLDER, final_filename))
             metadata = Argorithm(
@@ -94,7 +94,16 @@ class ArgorithmManager():
         # try:
         try:
             print(data["parameters"])
-            return function.run_code(data["parameters"])
+            return {
+                "status" : "run_parameters",
+                "data" : function.run_code(data["parameters"])
+                }
         except:
-            return function.run_code(None)
+            try:
+                return {
+                    "status" : "run_default",
+                    "data" : function.run_code(None)
+                }
+            except:
+                return {"status" : "error"}
             
