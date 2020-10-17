@@ -1,6 +1,7 @@
 import os
 import json
 import importlib
+import ARgorithmToolkit
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = '/app/app/uploads'
@@ -17,13 +18,17 @@ class Argorithm:
         self.file = kwargs['filename']
         self.function = kwargs['function']
         self.parameters = kwargs['parameters']
+        self.description = kwargs['description']
+        self.default = kwargs['default']
 
     def describe(self):
         return {
             "name" : self.name,
             "parameters" : self.parameters,
             "filename" : self.file,
-            "function" : self.function
+            "function" : self.function,
+            "description" : self.description,
+            "default" : self.default
         }
 
     def __str__(self):
@@ -33,8 +38,10 @@ class Argorithm:
         filepath = "app.uploads." + self.file[:-3]
         module = importlib.import_module(filepath)
         func = getattr(module , self.function)
-        parameters = self.parameters if parameters==None else parameters
-        return func(**parameters)
+        parameters = self.default if parameters==None else parameters
+        output = func(**parameters)
+        res = [x.content for x in output.states]
+        return res
 
 class ArgorithmManager():
 
@@ -70,7 +77,9 @@ class ArgorithmManager():
                 name=data['name'],
                 filename=final_filename,
                 function=data['function'],
-                parameters=data['parameters']
+                parameters=data['parameters'],
+                description=data['description'],
+                default=data["default"]
             )
             self.register.insert(key=data['name'] , value= metadata.describe())
             return {
@@ -83,10 +92,9 @@ class ArgorithmManager():
         if function==None:
             return {"status" : "not present"}
         # try:
-        if "parameters" in data:
+        try:
             print(data["parameters"])
             return function.run_code(data["parameters"])
-        else:
+        except:
             return function.run_code(None)
-        # except:
-        #     return {"status" : "error"}
+            
