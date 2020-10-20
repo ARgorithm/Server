@@ -1,0 +1,4 @@
+docker-compose*
+*.pem
+server-reload.sh
+data/
