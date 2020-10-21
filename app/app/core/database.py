@@ -43,4 +43,13 @@ class FileSource:
         with open(self.filename,'w') as store:
             json.dump(register,store)
 
+    def delete(self,key):
+        print(key)
+        with open(self.filename , 'r') as store:
+            register = json.load(store)
+        print(register[key])
+        del register[key]
+        with open(self.filename,'w') as store:
+            json.dump(register,store)
+
 algorithms = ArgorithmManager(source=FileSource())

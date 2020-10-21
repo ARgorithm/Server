@@ -23,3 +23,8 @@ def route_insert_argorithm():
 def route_run_algorithms():
     data = request.get_json()
     return jsonify(algorithms.process(data))
+
+@app.route("/argorithms/delete" , methods=['POST'])
+def route_delete_argorithm():
+    data = request.get_json()
+    return jsonify(algorithms.delete(data))
