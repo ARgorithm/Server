@@ -28,3 +28,14 @@ docker build -t argorithm-server .
 docker run --rm --name arserver -p 80:80 argorithm-server
 ```
 
+Running production on server:
+
+```bash
+sudo docker run --rm -d -p 80:80 -p 8080:8080 --mount source=uploads,destination=/app/app/uploads --name arserver alanjohn/argorithm-server:latest
+```
+
+Grafana
+```bash
+docker run -d -p 3000:3000 --name=grafana -v grafana-storage:/var/lib/grafana grafana/grafana
+```
+

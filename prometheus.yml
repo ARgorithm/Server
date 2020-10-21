@@ -1,0 +1,16 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+      monitor: 'codelab-monitor'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+# at localhost:9323 , it can read your container metrics for now when running local
+  - job_name: 'server-docker'
+    static_configs:
+      - targets: ['localhost:9323','ec2-13-127-193-38.ap-south-1.compute.amazonaws.com:9323']
+

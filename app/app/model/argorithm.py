@@ -91,7 +91,6 @@ class ArgorithmManager():
         function = self.search(data['argorithmID'])
         if function==None:
             return {"status" : "not present"}
-        # try:
         try:
             print(data["parameters"])
             return {
@@ -105,5 +104,21 @@ class ArgorithmManager():
                     "data" : function.run_code(None)
                 }
             except:
-                return {"status" : "error"}
-            
+                return {"status" : "error",
+                    "message" : str(e)
+                }
+    
+    def delete(self,data):
+        function = self.search(data['argorithmID'])
+        if function==None:
+            return {"status" : "not present"}
+        try:
+            to_be_deleted = function.file
+            print(os.path.join(UPLOAD_FOLDER , to_be_deleted))
+            os.remove(os.path.join(UPLOAD_FOLDER , to_be_deleted))
+            self.register.delete(function.argorithmID)
+            return {"status" : "successful"}
+        except Exception as e:
+            return {"status" : "error",
+                    "message" : str(e)  
+                }

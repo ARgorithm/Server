@@ -1,8 +1,7 @@
-data/
 *.pem
-refresh
+data/
 reloadserver.sh
-
+refresh
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
