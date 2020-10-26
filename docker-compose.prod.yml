@@ -1,0 +1,38 @@
+version: "3"
+services:
+    mongodb:
+        image: mongo
+        ports: 
+            - 27017:27017
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=${USERNAME}
+            - MONGO_INITDB_ROOT_PASSWORD=${PASSWORD}
+        volumes:
+            - mongo-data:/data/db
+    mongoexp:
+        image: mongo-express
+        ports:
+            - 9000:8081
+        environment:
+            - ME_CONFIG_MONGODB_ADMINUSERNAME=${USERNAME}
+            - ME_CONFIG_MONGODB_ADMINPASSWORD=${PASSWORD}
+            - ME_CONFIG_MONGODB_SERVER=mongodb
+        depends_on:
+            - mongodb
+    arserver:
+        image: alanjohn/argorithm-server:latest
+        ports: 
+            - 80:80
+        environment:
+            - DATABASE=MONGO
+            - USERNAME=${USERNAME}
+            - PASSWORD=${PASSWORD}
+        volumes:
+            - uploads:/app/app/uploads
+        depends_on:
+            - mongoexp
+volumes:
+    mongo-data:
+        driver: local
+    uploads:
+        driver: local

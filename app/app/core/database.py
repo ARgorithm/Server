@@ -1,11 +1,7 @@
 from ..model.argorithm import ArgorithmManager
 import os
 import json
-# import pymongo
-
-# client = pymongo.MongoClient("mongodb+srv://AlanJohn:<password>@cluster0.7tf44.mongodb.net/<dbname>?retryWrites=true&w=majority")
-# db = client.argorithm
-# user_collection = db.users
+from pymongo import MongoClient
 
 users = [
     {
@@ -14,6 +10,42 @@ users = [
     }
 ]
 
+class MongoSource:
+    def __init__(self,collection='argorithms'):
+        clientname = "mongodb"
+        port = 27017
+        username = os.getenv('USERNAME')
+        password = os.getenv('PASSWORD')
+        self.client = MongoClient(clientname, port , username=username,password=password , connect=False)
+        print("CONNECTED")
+        db = self.client.argorithms
+        self.coll = db[collection]
+
+    def list(self):
+        response = []
+        for doc in self.coll.find():
+            opt = {}
+            keys = ["argorithmID","parameters","description"]
+            for key in keys:
+                opt[key] = doc[key]
+            response.append(opt)
+        return response
+    
+    def search(self,name):
+        response = []
+        for doc in self.coll.find({ 'argorithmID' : name }):
+            response.append(doc)
+        if len(response) == 0:
+            return None
+        else:
+            return response[0]
+
+    def insert(self,key,value):
+        self.coll.insert_one(value)
+
+    def delete(self,key):
+        self.coll.delete_one({'argorithmID' : key})
+        
 class FileSource:
     def __init__(self,filename='db.json'):
         self.filename = os.path.join('/app/app/uploads' , filename)
@@ -22,9 +54,15 @@ class FileSource:
                 json.dump({},store)
     
     def list(self):
+        response = []
+        keys = ["argorithmID","parameters","description"]
         with open(self.filename,'r') as store:
             register = json.load(store)
-        response = [register[x] for x in register]
+        for x in register:
+            opt = {}
+            for key in keys:
+                opt[key] = register[x][key]
+            response.append(opt)
         return response
     
     def search(self,name):
@@ -52,4 +90,10 @@ class FileSource:
         with open(self.filename,'w') as store:
             json.dump(register,store)
 
-algorithms = ArgorithmManager(source=FileSource())
+
+DATABASE = os.getenv('DATABASE')
+print(f"DATABASE from env = {DATABASE}")
+if DATABASE == "MONGO":
+    algorithms = ArgorithmManager(source=MongoSource())
+else:
+    algorithms = ArgorithmManager(source=FileSource())

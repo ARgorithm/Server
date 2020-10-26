@@ -1,0 +1,11 @@
+version: "3"
+services:
+    arserver:
+        image: alanjohn/argorithm-server:latest
+        ports: 
+            - 80:80
+        volumes:
+            - local-uploads:/app/app/uploads
+volumes:
+    local-uploads:
+        driver: local
