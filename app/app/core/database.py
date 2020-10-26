@@ -15,8 +15,8 @@ users = [
 ]
 
 class FileSource:
-    def __init__(self):
-        self.filename = '/app/db.json'
+    def __init__(self,filename='db.json'):
+        self.filename = os.path.join('/app/app/uploads' , filename)
         if not os.path.isfile(self.filename):
             with open(self.filename,'w') as store:
                 json.dump({},store)
