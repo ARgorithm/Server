@@ -1,9 +1,18 @@
 from flask import Flask
+import os
 
 app = Flask(__name__)
 
-from .core import app_setup
+config_keys = [
+    "SECRET_KEY" , "AUTH" , "MAIL" ,
+    "DATABASE" , "DB_USERNAME" , "DB_PASSWORD" ,
+    "ADMIN_EMAIL" , "ADMIN_PASSWORD"
+]
 
+for KEY in config_keys:
+    app.config[KEY] = os.getenv(KEY)
+
+from .core import app_setup
 
 if __name__ == "__main__":
     # Only for debugging while developing

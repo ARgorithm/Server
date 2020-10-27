@@ -1,9 +1,13 @@
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
-# import jwt
+import jwt
+import uuid
+from datetime import datetime,timedelta
+from ..main import app
 
 class User:
-    def __init__(self,email,password,admin=False):
+    def __init__(self,public_id,email,password,admin=False):
+        self.public_id = public_id
         self.email = email
         self.password = password
         self.admin = admin
@@ -12,6 +16,7 @@ class User:
 
     def describe(self,security=True):
         res = {
+            "public_id" : self.public_id,
             "email" : self.email,
             "password" : self.password,
             "admin" : self.admin,
@@ -23,10 +28,10 @@ class User:
         return res
 
     def verify_password(self,attempt):
-        print(self.password)
-        print(attempt)
+        # print(self.password)
+        # print(attempt)
         curr = check_password_hash(self.password,attempt)
-        print(curr)
+        # print(curr)
         return curr
 
 class UserManager:
@@ -38,6 +43,19 @@ class UserManager:
         try:
             data = self.register.search(name=email,key="email")
             return User(
+                public_id=data['public_id'],
+                email=data['email'],
+                password=data['password'],
+                admin=data['admin']
+            )
+        except:
+            return None
+
+    def search_public_id(self,public_id):
+        try:
+            data = self.register.search(name=public_id,key="public_id")
+            return User(
+                public_id=data['public_id'],
                 email=data['email'],
                 password=data['password'],
                 admin=data['admin']
@@ -49,6 +67,7 @@ class UserManager:
         try:
             if self.search_user(data['email']) == None:
                 user = User(
+                    public_id=str(uuid.uuid4()),
                     email=data['email'],
                     password=generate_password_hash(data['password']),
                     admin=admin
@@ -70,8 +89,13 @@ class UserManager:
                     "status" : "Not Found"
                 }
             if user.verify_password(data['password']):
+                token = jwt.encode({ 
+                    'public_id': user.public_id, 
+                    'exp' : datetime.utcnow() + timedelta(days=30) 
+                }, app.config["SECRET_KEY"]) 
                 return {
-                    "status" : "successful"
+                    "status" : "successful",
+                    "token" : token.decode('utf-8')
                 }
             return {
                 "status" : "failure"

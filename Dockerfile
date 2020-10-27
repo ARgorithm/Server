@@ -7,6 +7,7 @@ RUN pip install -U pip && \
     pip install -r requirements.txt
 COPY ./app /app
 
+ENV SECRET_KEY=clawtime
 ENV AUTH=DISABLED
 ENV MAIL=DISABLED
 ENV DATABASE=DISABLED

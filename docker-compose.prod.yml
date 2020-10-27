@@ -26,6 +26,7 @@ services:
         environment:
             - DATABASE=MONGO
             - AUTH=ENABLED
+            - SECRET_KEY=${SECRET_KEY}
             - DB_USERNAME=${USERNAME}
             - DB_PASSWORD=${PASSWORD}
         volumes:

@@ -3,12 +3,13 @@ from ..model.user import UserManager
 import os
 import json
 from pymongo import MongoClient
+from ..main import app
 
 users = None
 user_list = [
     {
-        "email" : os.getenv("ADMIN_EMAIL"),
-        "password" : os.getenv("ADMIN_PASSWORD") ,
+        "email" : app.config["ADMIN_EMAIL"],
+        "password" : app.config["ADMIN_PASSWORD"] ,
     }
 ]
 
@@ -16,10 +17,10 @@ class MongoSource:
     def __init__(self,collection):
         clientname = "mongodb"
         port = 27017
-        username = os.getenv('DB_USERNAME')
-        password = os.getenv('DB_PASSWORD')
+        username = app.config["DB_USERNAME"]
+        password = app.config['DB_PASSWORD']
         self.client = MongoClient(clientname, port , username=username,password=password , connect=False)
-        print("CONNECTED")
+        # print("CONNECTED")
         db = self.client.argorithms
         self.coll = db[collection]
 
@@ -68,7 +69,7 @@ class FileSource:
     def search(self,name,key):
         with open(self.filename , 'r') as store:
             register = json.load(store)
-            print(register)
+            # print(register)
         try:
             return register[name]
         except:
@@ -82,18 +83,18 @@ class FileSource:
             json.dump(register,store)
 
     def delete(self,key,value):
-        print(key)
+        # print(key)
         with open(self.filename , 'r') as store:
             register = json.load(store)
-        print(register[value])
+        # print(register[value])
         del register[value]
         with open(self.filename,'w') as store:
             json.dump(register,store)
 
 
-DATABASE = os.getenv('DATABASE')
-AUTH = os.getenv('AUTH')
-MAIL = os.getenv('MAIL')
+DATABASE = app.config["DATABASE"]
+AUTH = app.config["AUTH"]
+MAIL = app.config["MAIL"]
 
 if DATABASE == "MONGO":
     algorithms = ArgorithmManager(source=MongoSource(collection='argorithms'))
