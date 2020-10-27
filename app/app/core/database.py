@@ -1,39 +1,40 @@
 from ..model.argorithm import ArgorithmManager
+from ..model.user import UserManager
 import os
 import json
 from pymongo import MongoClient
 
-users = [
+users = None
+user_list = [
     {
-        "name" : "Alan John" , 
-        "email" : "alansandra2013@gmail.com"
+        "email" : os.getenv("ADMIN_EMAIL"),
+        "password" : os.getenv("ADMIN_PASSWORD") ,
     }
 ]
 
 class MongoSource:
-    def __init__(self,collection='argorithms'):
+    def __init__(self,collection):
         clientname = "mongodb"
         port = 27017
-        username = os.getenv('USERNAME')
-        password = os.getenv('PASSWORD')
+        username = os.getenv('DB_USERNAME')
+        password = os.getenv('DB_PASSWORD')
         self.client = MongoClient(clientname, port , username=username,password=password , connect=False)
         print("CONNECTED")
         db = self.client.argorithms
         self.coll = db[collection]
 
-    def list(self):
+    def list(self,keys):
         response = []
         for doc in self.coll.find():
             opt = {}
-            keys = ["argorithmID","parameters","description"]
             for key in keys:
                 opt[key] = doc[key]
             response.append(opt)
         return response
     
-    def search(self,name):
+    def search(self,name,key):
         response = []
-        for doc in self.coll.find({ 'argorithmID' : name }):
+        for doc in self.coll.find({ key : name }):
             response.append(doc)
         if len(response) == 0:
             return None
@@ -43,8 +44,8 @@ class MongoSource:
     def insert(self,key,value):
         self.coll.insert_one(value)
 
-    def delete(self,key):
-        self.coll.delete_one({'argorithmID' : key})
+    def delete(self,key,value):
+        self.coll.delete_one({key : value})
         
 class FileSource:
     def __init__(self,filename='db.json'):
@@ -53,9 +54,8 @@ class FileSource:
             with open(self.filename,'w') as store:
                 json.dump({},store)
     
-    def list(self):
+    def list(self,keys=["argorithmID","parameters","description"]):
         response = []
-        keys = ["argorithmID","parameters","description"]
         with open(self.filename,'r') as store:
             register = json.load(store)
         for x in register:
@@ -65,7 +65,7 @@ class FileSource:
             response.append(opt)
         return response
     
-    def search(self,name):
+    def search(self,name,key):
         with open(self.filename , 'r') as store:
             register = json.load(store)
             print(register)
@@ -81,19 +81,32 @@ class FileSource:
         with open(self.filename,'w') as store:
             json.dump(register,store)
 
-    def delete(self,key):
+    def delete(self,key,value):
         print(key)
         with open(self.filename , 'r') as store:
             register = json.load(store)
-        print(register[key])
-        del register[key]
+        print(register[value])
+        del register[value]
         with open(self.filename,'w') as store:
             json.dump(register,store)
 
 
 DATABASE = os.getenv('DATABASE')
-print(f"DATABASE from env = {DATABASE}")
+AUTH = os.getenv('AUTH')
+MAIL = os.getenv('MAIL')
+
 if DATABASE == "MONGO":
-    algorithms = ArgorithmManager(source=MongoSource())
+    algorithms = ArgorithmManager(source=MongoSource(collection='argorithms'))
+    
+    if AUTH == "ENABLED":
+        users = UserManager(register=MongoSource(collection='users'))
+        for user in user_list:
+            users.register_user(
+                data=user,
+                admin=True
+            )    
+        if MAIL == 'ENABLED':
+            raise AssertionError("Mail support has not been added")
+
 else:
     algorithms = ArgorithmManager(source=FileSource())

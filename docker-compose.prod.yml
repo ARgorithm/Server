@@ -25,8 +25,9 @@ services:
             - 80:80
         environment:
             - DATABASE=MONGO
-            - USERNAME=${USERNAME}
-            - PASSWORD=${PASSWORD}
+            - AUTH=ENABLED
+            - DB_USERNAME=${USERNAME}
+            - DB_PASSWORD=${PASSWORD}
         volumes:
             - uploads:/app/app/uploads
         depends_on:

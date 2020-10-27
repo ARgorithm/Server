@@ -1,13 +1,31 @@
 from flask import jsonify , request
 import json
 
-from ..core.database import users , algorithms
+from ..core.database import users , algorithms , AUTH
 from ..main import app
 
-@app.route("/users/")
-def route_users():
-    users_data = users
+@app.route("/users/<email>" , methods=['GET'])
+def route_users(email):
+    if AUTH != 'ENABLED' or users==None:
+        return {
+            "status" : "not allowed" , 
+            "description" : "Auth is disabled"
+        }
+    users_data = users.search_user(email)
+    if users_data == None:
+        return {"status" : "Not Found"}
+    users_data = users_data.describe()
     return jsonify(users_data)
+
+@app.route("/users/register" , methods=['POST'])
+def route_register_user():
+    data = request.get_json()
+    return jsonify(users.register_user(data=data))
+
+@app.route("/users/login" , methods=['POST'])
+def route_login():
+    data = request.get_json()
+    return jsonify(users.login(data))
 
 @app.route("/argorithms/list" , methods=['GET'])
 def route_list_algorithms():

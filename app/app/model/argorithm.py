@@ -49,12 +49,12 @@ class ArgorithmManager():
         self.register = source
 
     def list(self):
-        return self.register.list()
+        return self.register.list(keys=["argorithmID","parameters","description"])
 
     def search(self,argorithmID):
         print(argorithmID)
         try:
-            return Argorithm(**self.register.search(argorithmID))
+            return Argorithm(**self.register.search(name=argorithmID,key="argorithmID"))
         except:
             return None
 
@@ -116,7 +116,7 @@ class ArgorithmManager():
             to_be_deleted = function.file
             print(os.path.join(UPLOAD_FOLDER , to_be_deleted))
             os.remove(os.path.join(UPLOAD_FOLDER , to_be_deleted))
-            self.register.delete(function.argorithmID)
+            self.register.delete(key="argorithmID",value=function.argorithmID)
             return {"status" : "successful"}
         except Exception as e:
             return {"status" : "error",
