@@ -1,4 +1,4 @@
-from ..api import routes 
+from ..api import user_routes , argorithm_routes 
 from ..main import app
 
 @app.route("/")

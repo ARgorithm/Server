@@ -16,7 +16,10 @@ def token_required(f):
             token = request.headers['x-access-token'] 
         
         if not token: 
-            return jsonify({'message' : 'Token is missing !!'}), 401
+            return jsonify({
+                'status' : False,
+                'message' : 'Token is missing !!'
+                }), 401
    
         try: 
             # decoding the payload to fetch the stored details 
@@ -24,6 +27,7 @@ def token_required(f):
             current_user = users.search_public_id(data['public_id']).email
         except: 
             return jsonify({ 
+                'status' : False,
                 'message' : 'Token is invalid !!'
             }), 401
         # returns the current logged in users contex to the routes 

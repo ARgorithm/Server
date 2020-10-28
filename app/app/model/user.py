@@ -6,12 +6,13 @@ from datetime import datetime,timedelta
 from ..main import app
 
 class User:
-    def __init__(self,public_id,email,password,admin=False):
+    def __init__(self,public_id,email,password,join_time,admin=False):
         self.public_id = public_id
         self.email = email
         self.password = password
         self.admin = admin
         self.confirmed = False
+        self.join_time = join_time
         self.black_list = False
 
     def describe(self,security=True):
@@ -21,7 +22,8 @@ class User:
             "password" : self.password,
             "admin" : self.admin,
             "confirmed" : self.confirmed,
-            "black_list" : self.black_list
+            "black_list" : self.black_list,
+            "join_time" : self.join_time.strftime("%m/%d/%Y, %H:%M:%S")
         }
         if security:
             del res['password']
@@ -46,7 +48,8 @@ class UserManager:
                 public_id=data['public_id'],
                 email=data['email'],
                 password=data['password'],
-                admin=data['admin']
+                admin=data['admin'],
+                join_time=datetime.strptime(data['join_time'],"%m/%d/%Y, %H:%M:%S")
             )
         except:
             return None
@@ -58,7 +61,8 @@ class UserManager:
                 public_id=data['public_id'],
                 email=data['email'],
                 password=data['password'],
-                admin=data['admin']
+                admin=data['admin'],
+                join_time=datetime.strptime(data['join_time'],"%m/%d/%Y, %H:%M:%S")
             )
         except:
             return None
@@ -70,7 +74,8 @@ class UserManager:
                     public_id=str(uuid.uuid4()),
                     email=data['email'],
                     password=generate_password_hash(data['password']),
-                    admin=admin
+                    admin=admin,
+                    join_time=datetime.utcnow()
                 )
                 self.register.insert(key='admin',value=user.describe(security=False))
                 return {"status":"success"}
