@@ -3,6 +3,7 @@ import json
 import importlib
 import ARgorithmToolkit
 from werkzeug.utils import secure_filename
+from ..main import app
 
 UPLOAD_FOLDER = '/app/app/uploads'
 ALLOWED_EXTENSIONS = {'py'}
@@ -14,6 +15,7 @@ def allowed_file(filename):
 class Argorithm:
 
     def __init__(self,**kwargs):
+        self.maintainer = kwargs['maintainer']
         self.argorithmID = kwargs['argorithmID']
         self.file = kwargs['filename']
         self.function = kwargs['function']
@@ -23,6 +25,7 @@ class Argorithm:
 
     def describe(self):
         return {
+            "maintainer": self.maintainer,
             "argorithmID" : self.argorithmID,
             "parameters" : self.parameters,
             "filename" : self.file,
@@ -49,12 +52,12 @@ class ArgorithmManager():
         self.register = source
 
     def list(self):
-        return self.register.list()
+        return self.register.list(keys=["argorithmID","parameters","description","maintainer"])
 
     def search(self,argorithmID):
-        print(argorithmID)
+        # print(argorithmID)
         try:
-            return Argorithm(**self.register.search(argorithmID))
+            return Argorithm(**self.register.search(name=argorithmID,key="argorithmID"))
         except:
             return None
 
@@ -74,6 +77,7 @@ class ArgorithmManager():
                 count+=1
             file.save(os.path.join(UPLOAD_FOLDER, final_filename))
             metadata = Argorithm(
+                maintainer=data['maintainer'],
                 argorithmID=data['argorithmID'],
                 filename=final_filename,
                 function=data['function'],
@@ -92,7 +96,7 @@ class ArgorithmManager():
         if function==None:
             return {"status" : "not present"}
         try:
-            print(data["parameters"])
+            # print(data["parameters"])
             return {
                 "status" : "run_parameters",
                 "data" : function.run_code(data["parameters"])
@@ -113,10 +117,11 @@ class ArgorithmManager():
         if function==None:
             return {"status" : "not present"}
         try:
+            assert data['maintainer'] == function.maintainer or data['maintainer'] == app.config["ADMIN_EMAIL"] , AssertionError("Authorization failed")
             to_be_deleted = function.file
-            print(os.path.join(UPLOAD_FOLDER , to_be_deleted))
+            # print(os.path.join(UPLOAD_FOLDER , to_be_deleted))
             os.remove(os.path.join(UPLOAD_FOLDER , to_be_deleted))
-            self.register.delete(function.argorithmID)
+            self.register.delete(key="argorithmID",value=function.argorithmID)
             return {"status" : "successful"}
         except Exception as e:
             return {"status" : "error",
