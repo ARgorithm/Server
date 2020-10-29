@@ -2,3 +2,5 @@ data/
 *.pem
 refresh
 reloadserver.sh
+*.yml
+.env
