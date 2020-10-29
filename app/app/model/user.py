@@ -3,7 +3,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import uuid
 from datetime import datetime,timedelta
-from ..main import app
 
 class User:
     def __init__(self,public_id,email,password,join_time,admin=False):
@@ -77,7 +76,7 @@ class UserManager:
                     admin=admin,
                     join_time=datetime.utcnow()
                 )
-                self.register.insert(key='admin',value=user.describe(security=False))
+                self.register.insert(key=data['email'],value=user.describe(security=False))
                 return {"status":"success"}
             else:
                 return {"status":"already exists"}
@@ -97,7 +96,7 @@ class UserManager:
                 token = jwt.encode({ 
                     'public_id': user.public_id, 
                     'exp' : datetime.utcnow() + timedelta(days=30) 
-                }, app.config["SECRET_KEY"]) 
+                }, os.getenv("SECRET_KEY")) 
                 return {
                     "status" : "successful",
                     "token" : token.decode('utf-8')
