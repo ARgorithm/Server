@@ -1,4 +1,5 @@
 from ..model.argorithm import ArgorithmManager
+from ..model.programmer import ProgrammerManager
 from ..model.user import UserManager
 import os
 import json
@@ -6,7 +7,8 @@ from pymongo import MongoClient
 from ..main import app
 
 users = None
-user_list = [
+programmers = None
+programmer_list = [
     {
         "email" : app.config["ADMIN_EMAIL"],
         "password" : app.config["ADMIN_PASSWORD"] ,
@@ -41,6 +43,9 @@ class MongoSource:
             return None
         else:
             return response[0]
+
+    def update(self,query,value):
+        self.coll.update_one(query,{"$set":value})
 
     def insert(self,key,value):
         self.coll.insert_one(value)
@@ -81,13 +86,11 @@ class FileSource:
         register[key] = value
         with open(self.filename,'w') as store:
             json.dump(register,store)
-
+            
     def delete(self,key,value):
-        # print(key)
         with open(self.filename , 'r') as store:
             register = json.load(store)
-        # print(register[value])
-        del register[value]
+        
         with open(self.filename,'w') as store:
             json.dump(register,store)
 
@@ -100,12 +103,13 @@ if DATABASE == "MONGO":
     algorithms = ArgorithmManager(source=MongoSource(collection='argorithms'))
     
     if AUTH == "ENABLED":
-        users = UserManager(register=MongoSource(collection='users'))
-        for user in user_list:
-            users.register_user(
-                data=user,
+        programmers = ProgrammerManager(register=MongoSource(collection='programmers'))
+        for programmer in programmer_list:
+            programmers.register_programmer(
+                data=programmer,
                 admin=True
-            )    
+            )
+        users = UserManager(register=MongoSource(collection='users'))  
         if MAIL == 'ENABLED':
             raise AssertionError("Mail support has not been added")
 

@@ -91,6 +91,20 @@ class ArgorithmManager():
             }
         return {"status" : "not python file"}
 
+    def update(self,data,file):
+        function = self.search(data['argorithmID'])
+        if function==None:
+            return {"status" : "not present"}
+        try:
+            assert data['maintainer'] == function.maintainer or data['maintainer'] == app.config["ADMIN_EMAIL"] , AssertionError("Authorization failed")
+            file.save(os.path.join(UPLOAD_FOLDER, function.file))
+            return {"status" : "successful"}
+        except Exception as e:
+            return {
+                "status" : "error",
+                "message" : str(e)  
+            }
+
     def process(self,data):
         function = self.search(data['argorithmID'])
         if function==None:
@@ -111,7 +125,7 @@ class ArgorithmManager():
                 return {"status" : "error",
                     "message" : str(e)
                 }
-    
+
     def delete(self,data):
         function = self.search(data['argorithmID'])
         if function==None:

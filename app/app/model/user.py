@@ -2,41 +2,33 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import uuid
-from datetime import datetime,timedelta
+
 
 class User:
-    def __init__(self,public_id,email,password,join_time,admin=False):
-        self.public_id = public_id
+    
+    def __init__(self,public_id,email,password,black_list=False):
         self.email = email
         self.password = password
-        self.admin = admin
-        self.confirmed = False
-        self.join_time = join_time
-        self.black_list = False
-
-    def describe(self,security=True):
+        self.public_id = public_id
+        self.black_list = black_list
+    
+    def describe(self,hide_password=True):
         res = {
-            "public_id" : self.public_id,
             "email" : self.email,
             "password" : self.password,
-            "admin" : self.admin,
-            "confirmed" : self.confirmed,
-            "black_list" : self.black_list,
-            "join_time" : self.join_time.strftime("%m/%d/%Y, %H:%M:%S")
+            "public_id" : self.public_id,
+            "black_list" : self.black_list
         }
-        if security:
+        if hide_password:
             del res['password']
         return res
 
     def verify_password(self,attempt):
-        # print(self.password)
-        # print(attempt)
         curr = check_password_hash(self.password,attempt)
-        # print(curr)
         return curr
 
-class UserManager:
 
+class UserManager:
     def __init__(self,register):
         self.register = register
     
@@ -47,8 +39,7 @@ class UserManager:
                 public_id=data['public_id'],
                 email=data['email'],
                 password=data['password'],
-                admin=data['admin'],
-                join_time=datetime.strptime(data['join_time'],"%m/%d/%Y, %H:%M:%S")
+                black_list=data['black_list']
             )
         except:
             return None
@@ -60,23 +51,20 @@ class UserManager:
                 public_id=data['public_id'],
                 email=data['email'],
                 password=data['password'],
-                admin=data['admin'],
-                join_time=datetime.strptime(data['join_time'],"%m/%d/%Y, %H:%M:%S")
+                black_list=data['black_list']
             )
         except:
             return None
 
-    def register_user(self,data,admin=False):
+    def register_user(self,data):
         try:
             if self.search_user(data['email']) == None:
                 user = User(
                     public_id=str(uuid.uuid4()),
                     email=data['email'],
                     password=generate_password_hash(data['password']),
-                    admin=admin,
-                    join_time=datetime.utcnow()
                 )
-                self.register.insert(key=data['email'],value=user.describe(security=False))
+                self.register.insert(key=data['email'],value=user.describe(hide_password=False))
                 return {"status":"success"}
             else:
                 return {"status":"already exists"}
@@ -111,11 +99,46 @@ class UserManager:
                 "message" : str(e)
             }
 
+    def delete(self,data):
+        try:
+            user = self.search_user(data['email'])
+            if user == None:
+                return {
+                    "status" : "Not Found"
+                }
+            self.register.delete(key="email",value=user.email)
+            return {"status" : "successful"}
+        except Exception as e:
+            return {"status" : "error",
+                "message" : str(e)
+            }
 
-## When adding mail support
-class UserManagerWithMail:
-    pass 
+    def black_list(self,data):
+        try:
+            user = self.search_user(data['email'])
+            if user == None:
+                return {
+                    "status" : "Not Found"
+                }
+            user.black_list = True
+            self.register.update({"email" : user.email},{"black_list" : user.black_list})
+            return {"status":"successful"}
+        except Exception as e:
+            return {"status" : "error",
+                "message" : str(e)
+            }
 
-    
-        
-    
+    def white_list(self,data):
+        try:
+            user = self.search_user(data['email'])
+            if user == None:
+                return {
+                    "status" : "Not Found"
+                }
+            user.black_list = False
+            self.register.update({"email" : user.email},{"black_list" : user.black_list})
+            return {"status":"successful"}
+        except Exception as e:
+            return {"status" : "error",
+                "message" : str(e)
+            }

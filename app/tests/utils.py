@@ -14,6 +14,7 @@ class BlankSource():
     
     def search(self,name,key):
         try:
+            print(self.data[name])
             return self.data[name]
         except:
             return None
@@ -24,3 +25,6 @@ class BlankSource():
     def delete(self,key,value):
         del self.data[value]
         
+    def update(self,query,value):
+        for v in value:
+            self.data[query["email"]][v] = value[v]
