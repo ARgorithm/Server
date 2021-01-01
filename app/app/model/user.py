@@ -87,7 +87,7 @@ class UserManager:
                 }, os.getenv("SECRET_KEY")) 
                 return {
                     "status" : "successful",
-                    "token" : token.decode('utf-8')
+                    "token" : token
                 }
             return {
                 "status" : "failure"

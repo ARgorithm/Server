@@ -100,9 +100,10 @@ class ProgrammerManager:
                     'public_id': programmer.public_id, 
                     'exp' : datetime.utcnow() + timedelta(days=30) 
                 }, os.getenv("SECRET_KEY")) 
+                print(type(token))
                 return {
                     "status" : "successful",
-                    "token" : token.decode('utf-8')
+                    "token" : token
                 }
             return {
                 "status" : "failure"
