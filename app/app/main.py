@@ -6,7 +6,7 @@ app = Flask(__name__)
 config_keys = [
     "SECRET_KEY" , "AUTH" , "MAIL" ,
     "DATABASE" , "DB_USERNAME" , "DB_PASSWORD" ,
-    "ADMIN_EMAIL" , "ADMIN_PASSWORD"
+    "ADMIN_EMAIL" , "ADMIN_PASSWORD" , "DB_ENDPOINT" , "DB_PORT"
 ]
 
 for KEY in config_keys:
