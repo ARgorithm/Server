@@ -1,143 +1,158 @@
+"""The model for argorithms and utility classes to handle all things related to the code and configuration of argorithms
+"""
 import os
-import json
+import shutil
 import importlib
-import ARgorithmToolkit
-from werkzeug.utils import secure_filename
-from ..main import app
+from typing import Optional
+from pydantic import BaseModel,EmailStr,Field
+from ..main import STORAGE_FOLDER,config
+from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
 
-UPLOAD_FOLDER = '/app/app/uploads'
-ALLOWED_EXTENSIONS = {'py'}
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-class Argorithm:
-
-    def __init__(self,**kwargs):
-        self.maintainer = kwargs['maintainer']
-        self.argorithmID = kwargs['argorithmID']
-        self.file = kwargs['filename']
-        self.function = kwargs['function']
-        self.parameters = kwargs['parameters']
-        self.description = kwargs['description']
-        self.default = kwargs['default']
-
-    def describe(self):
-        return {
-            "maintainer": self.maintainer,
-            "argorithmID" : self.argorithmID,
-            "parameters" : self.parameters,
-            "filename" : self.file,
-            "function" : self.function,
-            "description" : self.description,
-            "default" : self.default
-        }
+class ARgorithm(BaseModel):
+    """The model class for argorithms
+    """
+    maintainer:str=""
+    argorithmID:str=""
+    filename:str=""
+    function:str=""
+    parameters:dict={}
+    description:str=""
+    example:dict={}
 
     def __str__(self):
+        """Return ArgorithmID
+        """
         return self.argorithmID
 
-    def run_code(self,parameters):
-        filepath = "app.uploads." + self.file[:-3]
+    async def run_code(self,parameters):
+        """executes argorithm code and returns StateSet
+        """
+        filepath = "app.uploads." + self.filename[:-3]
         module = importlib.import_module(filepath)
         func = getattr(module , self.function)
-        parameters = self.default if parameters==None else parameters
+        parameters = self.example if parameters==None else parameters
         output = func(**parameters)
         res = [x.content for x in output.states]
         return res
 
-class ArgorithmManager():
+class ARgorithmManager():
+    """The manager class that acts as an interface between the logical handling of argorithms and its physical representation
+    """
 
     def __init__(self , source):
         self.register = source
 
-    def list(self):
-        return self.register.list(keys=["argorithmID","parameters","description","maintainer"])
+    async def list(self):
+        """list all argorithms in database
+        """
+        return await self.register.list()
 
-    def search(self,argorithmID):
-        # print(argorithmID)
+    async def search(self,argorithmID):
+        """search argorithm by ID
+        """
+        data = await self.register.search('argorithmID',argorithmID)
+        if data:
+            return ARgorithm(**data[0])
+        raise NotFoundError(f"'{argorithmID}' does not exist")
+    
+
+    async def insert(self,data,file):
+        """insert a argorithm to existing collectionS
+        """
         try:
-            return Argorithm(**self.register.search(name=argorithmID,key="argorithmID"))
-        except:
-            return None
+            func = await self.search(data['argorithmID'])
+            raise AlreadyExistsError("Change argorithmID")
+        except NotFoundError as ex:
+            if allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                if filename != data['file']:
+                    raise ValueError("invalid file name")
+                count = 1
+                final_filename = filename
+                while os.path.isfile(os.path.join(STORAGE_FOLDER, final_filename)):
+                    final_filename = filename[:-3]+f"_{count}"+filename[-3:]
+                    count+=1
+                with open(os.path.join(STORAGE_FOLDER, final_filename),'wb+') as buffer:
+                    shutil.copyfileobj(file.file,buffer)
+                try:
+                    metadata = ARgorithm(
+                        maintainer=data['maintainer'],
+                        argorithmID=data['argorithmID'],
+                        filename=final_filename,
+                        function=data['function'],
+                        parameters=data['parameters'],
+                        description=data['description'],
+                        example=data["default"]
+                    )
+                    await self.register.insert(metadata)
+                    return True
+                except Exception as e:
+                    raise e
+                    os.remove(os.path.join(STORAGE_FOLDER , final_filename))
+            raise AssertionError("File should be a python file [.py]")
+        except Exception as ex:
+            raise e
+        
 
-    def insert(self,data,file):
-        if self.search(data['argorithmID']) != None:
-            return {"status" : "argorithmID already exists"}
-        if allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            if filename != data['file']:
-                return {
-                    "status" : "filename was invalid"
-                } 
-            count = 1
-            final_filename = filename
-            while os.path.isfile(os.path.join(UPLOAD_FOLDER, final_filename)):
-                final_filename = filename[:-3]+f"_{count}"+filename[-3:]
-                count+=1
-            file.save(os.path.join(UPLOAD_FOLDER, final_filename))
-            metadata = Argorithm(
-                maintainer=data['maintainer'],
-                argorithmID=data['argorithmID'],
-                filename=final_filename,
-                function=data['function'],
-                parameters=data['parameters'],
-                description=data['description'],
-                default=data["default"]
-            )
-            self.register.insert(key=data['argorithmID'] , value= metadata.describe())
-            return {
-                "status" : "successful"
-            }
-        return {"status" : "not python file"}
-
-    def update(self,data,file):
-        function = self.search(data['argorithmID'])
-        if function==None:
-            return {"status" : "not present"}
+    async def update(self,data,file):
+        """updates argorithm
+        """
+        function = await self.search(data['argorithmID'])
         try:
-            assert data['maintainer'] == function.maintainer or data['maintainer'] == app.config["ADMIN_EMAIL"] , AssertionError("Authorization failed")
-            file.save(os.path.join(UPLOAD_FOLDER, function.file))
-            return {"status" : "successful"}
-        except Exception as e:
-            return {
-                "status" : "error",
-                "message" : str(e)  
-            }
+            assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
+            function = ARgorithm(
+                    maintainer=data['maintainer'],
+                    argorithmID=data['argorithmID'],
+                    filename=function.filename,
+                    function=data['function'],
+                    parameters=data['parameters'],
+                    description=data['description'],
+                    example=data["default"]
+                )
+            await self.register.update(function.argorithmID,function)
+            with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
+                shutil.copyfileobj(file.file,buffer)
+            return True
+        except AttributeError as ae:
+            raise ae
+        except AssertionError as ae:
+            raise ae
+        except Exception as ex:
+            raise ex
 
-    def process(self,data):
-        function = self.search(data['argorithmID'])
-        if function==None:
-            return {"status" : "not present"}
+    async def process(self,data):
+        """executes argorithm with given parameters
+        """
+        data = data.__dict__
+        function = await self.search(data['argorithmID'])
         try:
-            # print(data["parameters"])
             return {
                 "status" : "run_parameters",
-                "data" : function.run_code(data["parameters"])
+                "data" : await function.run_code(data["parameters"])
                 }
         except:
             try:
                 return {
-                    "status" : "run_default",
-                    "data" : function.run_code(None)
+                    "status" : "run_example",
+                    "data" : await function.run_code(None)
                 }
-            except Exception as e:
-                return {"status" : "error",
-                    "message" : str(e)
-                }
+            except Exception as ex:
+                raise ex
 
-    def delete(self,data):
-        function = self.search(data['argorithmID'])
-        if function==None:
-            return {"status" : "not present"}
+    async def delete(self,data):
+        """deletes argorithm
+        """
+        data = data.__dict__
+        function = await self.search(data['argorithmID'])
         try:
-            assert data['maintainer'] == function.maintainer or data['maintainer'] == app.config["ADMIN_EMAIL"] , AssertionError("Authorization failed")
-            to_be_deleted = function.file
-            # print(os.path.join(UPLOAD_FOLDER , to_be_deleted))
-            os.remove(os.path.join(UPLOAD_FOLDER , to_be_deleted))
-            self.register.delete(key="argorithmID",value=function.argorithmID)
+            assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
+            to_be_deleted = function.filename
+            await self.register.delete(function.argorithmID)
+            os.remove(os.path.join(STORAGE_FOLDER , to_be_deleted))
             return {"status" : "successful"}
-        except Exception as e:
-            return {"status" : "error",
-                    "message" : str(e)  
-                }
+        except AssertionError as er:
+            raise er
+        except FileNotFoundError as fe:
+            pass
+        except Exception as ex:
+            raise ex

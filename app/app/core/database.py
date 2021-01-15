@@ -1,117 +1,213 @@
-from ..model.argorithm import ArgorithmManager
-from ..model.programmer import ProgrammerManager
-from ..model.user import UserManager
+"""database utilities
+"""
 import os
+import asyncio
 import json
-from pymongo import MongoClient
-from ..main import app
+from motor import motor_asyncio
+from databases import Database
+from pydantic import BaseModel
 
-users = None
-programmers = None
-programmer_list = [
-    {
-        "email" : app.config["ADMIN_EMAIL"],
-        "password" : app.config["ADMIN_PASSWORD"] ,
+from ..main import config,STORAGE_FOLDER,app
+from ..model.argorithm import ARgorithm,ARgorithmManager
+from ..model.programmer import Programmer,ProgrammerManager
+from ..model.user import User,UserManager
+from ..model.utils import Account , AlreadyExistsError
+
+admin_account = Account(
+    email=config.ADMIN_EMAIL,
+    password=config.ADMIN_PASSWORD,
+)
+
+def clean(res):
+    """Cleans data recieved from SQLITE database
+    """
+    if res:
+        item = {}
+        for key,value in res.items():
+            try:
+                item[key] = json.loads(value)
+            except:
+                item[key] = value
+        return item
+    return None
+
+class FileSource:
+    """manages data storage in sqlite.db
+    """
+    def __init__(self):
+        location = os.path.join(STORAGE_FOLDER,'sqlite.db')
+        self.database = Database(f"sqlite:///{location}")
+        
+    async def create(self):
+        """Creates the tables
+        """
+        await self.database.connect()
+        query = """CREATE TABLE argorithm(
+            argorithmID varchar PRIMARY KEY,
+            maintainer varchar,
+            filename varchar,
+            function varchar,
+            description varchar,
+            parameters varchar,
+            example varchar
+        )"""
+        await self.database.execute(query)
+
+    async def list(self):
+        """query all data from table
+        """
+        try:
+            await self.create()
+        except:
+            pass
+        query = "SELECT * FROM argorithm"
+        rows = await self.database.fetch_all(query)
+        return [clean(row) for row in rows]
+
+    async def search(self,key,value):
+        """query specific data from table
+        """
+        try:
+            await self.create()
+        except:
+            pass
+        query = f"SELECT * FROM argorithm where {key}='{value}'"
+        rows = await self.database.fetch_all(query)
+        return [clean(row) for row in rows]
+
+    async def insert(self,data:ARgorithm):
+        """insert data into table
+        """
+        try:
+            await self.create()
+        except:
+            pass
+        query = "INSERT INTO argorithm(_keys_) VALUES (_values_)"
+        data = data.__dict__
+        keys = []
+        values = {}
+        for key in data:
+            keys.append(key)
+            if isinstance(data[key],dict):
+                values[key] = json.dumps(data[key])
+            else:
+                values[key] = data[key]
+        query = query.replace('_keys_',','.join(keys))
+        query = query.replace('_values_',','.join([f":{key}" for key in keys]))
+        await self.database.execute_many(query,[values])
+
+    async def update(self,key,data:ARgorithm):
+        """update table data
+        """
+        query = f"UPDATE argorithm SET :key = :value WHERE argorithmID={key}"
+        data = data.__dict__
+        
+    async def delete(self,key):
+        """delete table data
+        """
+        query = f"DELETE FROM argorithm WHERE argorithmID='{key}'"
+        await self.database.execute(query)
+
+pk = {
+        "argorithm" : "argorithmID",
+        "user" : "email",
+        "programmer" : "email"
     }
-]
 
 class MongoSource:
-    def __init__(self,collection):
-        clientname = "mongodb"
-        port = 27017
-        username = app.config["DB_USERNAME"]
-        password = app.config['DB_PASSWORD']
-        self.client = MongoClient(clientname, port , username=username,password=password , connect=False)
-        # print("CONNECTED")
-        db = self.client.argorithms
-        self.coll = db[collection]
+    """database manager for mongodb database
 
-    def list(self,keys):
-        response = []
-        for doc in self.coll.find():
-            opt = {}
-            for key in keys:
-                opt[key] = doc[key]
-            response.append(opt)
-        return response
-    
-    def search(self,name,key):
-        response = []
-        for doc in self.coll.find({ key : name }):
-            response.append(doc)
-        if len(response) == 0:
-            return None
-        else:
-            return response[0]
+    attributes:
+        label(str): The model for which collection is managed
+        collection(motor.AsyncIOMotorCollection): The collection of documents
+    """
+    def __init__(self,label):
+        assert label in ['user','programmer','argorithm']
+        print(f"Connecting to mongodb collection={label}...")
+        client = motor_asyncio.AsyncIOMotorClient(
+            config.DB_ENDPOINT,port=config.DB_PORT,
+            username=config.DB_USERNAME,
+            password=config.DB_PASSWORD
+        )
+        database = client['argorithmdb']
+        self.label = label
+        self.collection = database[self.label]
 
-    def update(self,query,value):
-        self.coll.update_one(query,{"$set":value})
+    async def setup_indexes(self):
+        """create indexes
+        """
+        self.collection.create_index(pk[self.label],unique=True)
 
-    def insert(self,key,value):
-        self.coll.insert_one(value)
+    async def list(self):
+        """query all the documents in collection
+        """
+        res = []
+        cursor = self.collection.find()
+        for document in await cursor.to_list(length=100):
+            if '_id' in document:
+                del document['_id']
+            res.append(document)
+        return res
 
-    def delete(self,key,value):
-        self.coll.delete_one({key : value})
-        
-class FileSource:
-    def __init__(self,filename='db.json'):
-        self.filename = os.path.join('/app/app/uploads' , filename)
-        if not os.path.isfile(self.filename):
-            with open(self.filename,'w') as store:
-                json.dump({},store)
-    
-    def list(self,keys=["argorithmID","parameters","description"]):
-        response = []
-        with open(self.filename,'r') as store:
-            register = json.load(store)
-        for x in register:
-            opt = {}
-            for key in keys:
-                opt[key] = register[x][key]
-            response.append(opt)
-        return response
-    
-    def search(self,name,key):
-        with open(self.filename , 'r') as store:
-            register = json.load(store)
-            # print(register)
+    async def search(self,key,value):
+        """search for documents in the collection
+        """
+        res = []
+        cursor = self.collection.find({key:value})
         try:
-            return register[name]
-        except:
-            return None
+            for document in await cursor.to_list(length=1):
+                if '_id' in document:
+                    del document["_id"]
+                res.append(document)
+        except Exception as e:
+            print(e)
+            raise e
+        if len(res) > 0:
+            return res
+        return None
 
-    def insert(self,key,value):
-        with open(self.filename , 'r') as store:
-            register = json.load(store)
-        register[key] = value
-        with open(self.filename,'w') as store:
-            json.dump(register,store)
-            
-    def delete(self,key,value):
-        with open(self.filename , 'r') as store:
-            register = json.load(store)
+    async def insert(self,model:BaseModel):
+        """insert documents into the collection
+        """
+        document = model.__dict__
+        result = await self.collection.insert_one(document)
         
-        with open(self.filename,'w') as store:
-            json.dump(register,store)
+    async def update(self,key,value):
+        """update documents in the collection
+        """
+        result = await self.collection.update_one({pk[self.label]:key}, {'$set': value.__dict__})
 
+    async def delete(self,key):
+        """delete documents in the collection
+        """
+        index = pk[self.label]
+        result = await self.collection.delete_many({index:key})        
 
-DATABASE = app.config["DATABASE"]
-AUTH = app.config["AUTH"]
-MAIL = app.config["MAIL"]
-
-if DATABASE == "MONGO":
-    algorithms = ArgorithmManager(source=MongoSource(collection='argorithms'))
-    
-    if AUTH == "ENABLED":
-        programmers = ProgrammerManager(register=MongoSource(collection='programmers'))
-        for programmer in programmer_list:
-            programmers.register_programmer(
-                data=programmer,
-                admin=True
-            )
-        users = UserManager(register=MongoSource(collection='users'))  
-        if MAIL == 'ENABLED':
-            raise AssertionError("Mail support has not been added")
-
+argorithm_db , users_db , programmers_db = None , None , None
+if config.DATABASE == "DISABLED":
+    print("Connecting to sqlite...")
+    argorithm_db = ARgorithmManager(source=FileSource())
 else:
-    algorithms = ArgorithmManager(source=FileSource())
+    argorithm_db = ARgorithmManager(source=MongoSource(label="argorithm"))
+    if config.AUTH != "DISABLED":
+        users_db = UserManager(source=MongoSource(label='user'))
+        programmers_db = ProgrammerManager(source=MongoSource(label="programmer"))
+        
+@app.on_event("startup")
+async def admincreds():
+    """creates admin account in database
+    """
+    if config.DATABASE != "DISABLED":
+        await argorithm_db.register.setup_indexes()
+        if config.AUTH:
+            try:
+                await users_db.register.setup_indexes()
+                await users_db.register_user(admin_account)
+            except Exception as ex:
+                pass
+            try:
+                await programmers_db.register.setup_indexes()
+                await programmers_db.register_programmer(admin_account,admin=True)
+            except Exception as ex:
+                pass
+    print("Admin accounts created")

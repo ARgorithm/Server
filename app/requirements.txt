@@ -1,3 +1,10 @@
+jinja2
+aiofiles
+python-multipart
+databases[sqlite]
+python-jose
+passlib[bcrypt]
+motor
 pytest
 pymongo[srv]
 ARgorithmToolkit

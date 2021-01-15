@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="static/style.css">
-    <link rel="shortcut icon" href="https://raw.githubusercontent.com/ARgorithm/Server/master/app/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/style.css" >
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/termynal.css">
     <title>ARgorithm</title>
 </head>
 <body>
-    <!-- <nav class="navbar navbar-expand-lg">
-        <h1>ARgorithm</h1>
-    </nav> -->
     <nav class="navbar navbar-expand-lg">
         <h1><span id="red">AR</span>gorithm</h1>
     </nav>
     <div class="container">
         <div class="row">
             <div class="col-lg-4" id="logo-panel">
-                <img class="logo" src="https://raw.githubusercontent.com/ARgorithm/Server/master/app/static/Logo_black.svg" alt="">
+                <img class="logo" src="/static/Logo_black.svg" alt="">
             </div>
             <div class="col-lg-8">
                 <div class="instructions">
@@ -31,10 +29,25 @@
                         If running toolkit on same machine as server just use the <span class="code">--local</span> option in the command
                         line arguments. If using toolkit on a different machine then on the command line use: 
                     </p>
-                        <pre>$ ARgorithm configure</pre> 
-                    <p>
-                    and then copy the url of this page and paste it there. The same URL should be added as server endpoint in mobile application.
-                    </p>
+
+                    <div id="termynal" data-termynal data-ty-typeDelay="40" data-ty-lineDelay="700">
+                        <span data-ty="input">pip install spacy</span>
+                        <span data-ty="progress"></span>
+                        <span data-ty>Successfully installed spacy</span>
+                        <span data-ty></span>
+                        <span data-ty="input">python -m spacy download en</span>
+                        <span data-ty="progress"></span>
+                        <span data-ty>Installed model 'en'</span>
+                        <span data-ty></span>
+                        <span data-ty="input">python</span>
+                        <span data-ty="input" data-ty-prompt=">>>">import spacy</span>
+                        <span data-ty="input" data-ty-prompt=">>>">nlp = spacy.load('en')</span>
+                        <span data-ty="input" data-ty-prompt=">>>">doc = nlp(u'Hello world')</span>
+                        <span data-ty="input" data-ty-prompt=">>>">print([(w.text, w.pos_) for w in doc])</span>
+                        <span data-ty>[('Hello', 'INTJ'), ('world', 'NOUN')]</span>
+                        <a href="#" data-terminal-control="">restart ↻</a>
+                    </div>
+                    <script src="/static/termynal.js" data-termynal-container="#termynal"></script>
                 </div>
             </div>
         </div>

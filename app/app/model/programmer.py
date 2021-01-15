@@ -1,203 +1,103 @@
-import os
-from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
+"""Handles the programmer model and utility classes
+"""
 import uuid
-from datetime import datetime,timedelta
+from datetime import datetime
+from pydantic import BaseModel
 
-class Programmer:
-    def __init__(self,public_id,email,password,join_time,admin=False,black_list=False):
-        self.public_id = public_id
-        self.email = email
-        self.password = password
-        self.admin = admin
-        self.confirmed = False
-        self.join_time = join_time
-        self.black_list = black_list
+from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError
 
-    def describe(self,security=True):
-        res = {
-            "public_id" : self.public_id,
-            "email" : self.email,
-            "password" : self.password,
-            "admin" : self.admin,
-            "confirmed" : self.confirmed,
-            "black_list" : self.black_list,
-            "join_time" : self.join_time.strftime("%m/%d/%Y, %H:%M:%S")
-        }
-        if security:
+class Programmer(Account):
+    """Programmer model
+    """
+    public_id:str
+    admin:bool
+    confirmed:bool
+    join_time:datetime
+    black_list:bool
+
+    def describe(self,hide_password=True):
+        """returns programmer data"""
+        res = self.__dict__()
+        if hide_password:
             del res['password']
         return res
 
-    def verify_password(self,attempt):
-        # print(self.password)
-        # print(attempt)
-        curr = check_password_hash(self.password,attempt)
-        # print(curr)
-        return curr
+class ProgrammerManager():
+    """Programmer manager class handles the programmers in the database
+    """
+    def __init__(self,source):
+        self.register = source
 
-class ProgrammerManager:
+    async def search_email(self,email:str):
+        """searches programmer by email
+        """
+        data = await self.register.search('email',email)
+        if data:
+            return Programmer(**data[0])
+        raise NotFoundError('programmer not found')
 
-    def __init__(self,register):
-        self.register = register
+    async def search_public_id(self,public_id:str):
+        """searches programmer by public_id
+        """
+        data = await self.register.search('public_id',public_id)
+        if data:
+            return Programmer(**data[0])
+        raise NotFoundError('programmer not found')
     
-    def search_programmer(self,email):
+    async def register_programmer(self,data:Account,admin=False):
+        """registers new programmer"""
         try:
-            data = self.register.search(name=email,key="email")
-            return Programmer(
-                public_id=data['public_id'],
-                email=data['email'],
-                password=data['password'],
-                admin=data['admin'],
-                black_list=data['black_list'],
-                join_time=datetime.strptime(data['join_time'],"%m/%d/%Y, %H:%M:%S")
+            existing = await self.search_email(data.email)
+            raise AlreadyExistsError("email already registered") 
+        except NotFoundError as nfe:
+            new_account = Programmer(
+                email=data.email,
+                password=get_password_hash(data.password),
+                public_id=str(uuid.uuid4()),
+                admin=admin,
+                join_time=datetime.now(),
+                confirmed=False,
+                black_list=False
             )
-        except Exception as e:
-            print(str(e))
-            return None
+            await self.register.insert(new_account)
+            return True
+        except Exception as ex:
+            print(ex)
+            raise ex
 
-    def search_public_id(self,public_id):
-        try:
-            data = self.register.search(name=public_id,key="public_id")
-            return Programmer(
-                public_id=data['public_id'],
-                email=data['email'],
-                password=data['password'],
-                admin=data['admin'],
-                black_list=data['black_list'],
-                join_time=datetime.strptime(data['join_time'],"%m/%d/%Y, %H:%M:%S")
-            )
-        except:
-            return None
+    async def delete_programmer(self,email:str):
+        """deletes existing programmer"""
+        existing = await self.search_email(email)
+        await self.register.delete(email)
+        return True
 
-    def register_programmer(self,data,admin=False):
-        try:
-            if self.search_programmer(data['email']) == None:
-                programmer = Programmer(
-                    public_id=str(uuid.uuid4()),
-                    email=data['email'],
-                    password=generate_password_hash(data['password']),
-                    admin=admin,
-                    join_time=datetime.utcnow()
-                )
-                self.register.insert(key=data['email'],value=programmer.describe(security=False))
-                return {"status":"success"}
-            else:
-                return {"status":"already exists"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
+    async def black_list(self,email:str):
+        """blacklist programmer"""
+        programmer = await self.search_email(email)
+        programmer.black_list = True
+        programmer.admin = False
+        await self.register.update(email,programmer)
+        return True
 
-    def login(self,data):
-        try:
-            programmer = self.search_programmer(data['email'])
-            if programmer == None:
-                return {
-                    "status" : "Not Found"
-                }
-            if programmer.verify_password(data['password']):
-                token = jwt.encode({ 
-                    'public_id': programmer.public_id, 
-                    'exp' : datetime.utcnow() + timedelta(days=30) 
-                }, os.getenv("SECRET_KEY")) 
-                print(type(token))
-                return {
-                    "status" : "successful",
-                    "token" : token
-                }
-            return {
-                "status" : "failure"
-            }
-            
-            
-        except Exception as e:
-            print(str(e))
-            return {"status" : "error",
-                "message" : str(e)
-            }
-
-    def delete(self,data):
-        try:
-            programmer = self.search_programmer(data['email'])
-            if programmer == None:
-                return {
-                    "status" : "Not Found"
-                }
-            self.register.delete(key="email",value=programmer.email)
-            return {"status" : "successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
-
-    def black_list(self,data):
-        try:
-            programmer = self.search_programmer(data['email'])
-            if programmer == None:
-                return {
-                    "status" : "Not Found"
-                }
-            programmer.admin = False
-            programmer.black_list = True
-            self.register.update({"email" : programmer.email},{"black_list" : programmer.black_list})
-            return {"status":"successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
-
-    def white_list(self,data):
-        try:
-            programmer = self.search_programmer(data['email'])
-            if programmer == None:
-                return {
-                    "status" : "Not Found"
-                }
-            programmer.black_list = False
-            self.register.update({"email" : programmer.email},{"black_list" : programmer.black_list})
-            return {"status":"successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
+    async def white_list(self,email:str):
+        """whitelist programmer"""
+        programmer = await self.search_email(email)
+        programmer.black_list = False
+        await self.register.update(email,programmer)
+        return True
     
-    def grant(self,data):
-        try:
-            print(data["email"])
-            programmer = self.search_programmer(data['email'])
-            if programmer == None:
-                return {
-                    "status" : "Not Found"
-                }
-            if programmer.black_list:
-                return {"status" : "blacklisted"}
-            programmer.admin = True
-            self.register.update({"email" : programmer.email},{"admin" : programmer.admin})
-            return {"status":"successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
+    async def grant(self,email:str):
+        """grants administrator priveleges to programmer"""
+        programmer = await self.search_email(email)
+        if programmer.black_list:
+            raise AttributeError("account is blacklisted")
+        programmer.admin = True
+        await self.register.update(email,programmer)
+        return True
 
-    def revoke(self,data):
-        try:
-            programmer = self.search_programmer(data['email'])
-            if programmer == None:
-                return {
-                    "status" : "Not Found"
-                }
-            programmer.admin = False
-            self.register.update({"email" : programmer.email},{"admin" : programmer.admin})
-            return {"status":"successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
-
-## When adding mail support
-class ProgrammerManagerWithMail:
-    pass 
-
-    
-        
-    
+    async def revoke(self,email:str):
+        """revokes administrator priveleges from programmer"""
+        programmer = await self.search_email(email)
+        programmer.admin = False
+        await self.register.update(email,programmer)
+        return True

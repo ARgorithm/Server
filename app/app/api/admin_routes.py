@@ -1,69 +1,137 @@
-from flask import jsonify , request , make_response
-import json
-from .utils import programmer_token_required , auth_required
-from ..core.database import programmers , users
-from ..main import app
+from fastapi import APIRouter , Depends , status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from fastapi.exceptions import HTTPException
 
-@app.route("/admin/delete_user" , methods=['POST'])
-@programmer_token_required
-def route_delete_user(maintainer):
-    data = request.get_json()
-    programmers_data = programmers.search_programmer(maintainer)
-    if programmers_data.admin == False:
-        return jsonify({"status" : "access denied"})
-    return jsonify(users.delete(data))
+from ..core.database import programmers_db,users_db
+from ..core.auth import get_admin_programmer
 
-@app.route("/admin/delete_programmer" , methods=['POST'])
-@programmer_token_required
-def route_delete_programmer(maintainer):
-    data = request.get_json()
-    programmers_data = programmers.search_programmer(maintainer)
-    if programmers_data.admin == False:
-        return jsonify({"status" : "access denied"})
-    return jsonify(programmers.delete(data))
+from ..model.utils import NotFoundError
 
+admin_api = APIRouter()
 
-@app.route("/admin/black_list" , methods=['POST'])
-@programmer_token_required
-def route_black_list(maintainer):
-    data = request.get_json()
-    programmers_data = programmers.search_programmer(maintainer)
-    if programmers_data.admin == False:
-        return jsonify({"status" : "access denied"})
-    st1 = programmers.black_list(data)['status']
-    st2 = users.black_list(data)['status']
-    if st1 == "successful" or st2 == "successful":
-        return jsonify({"status" : "successful"})     
-    return jsonify({"status" : "not found"})
+class AdminRequest(BaseModel):
+    email:str
 
-@app.route("/admin/white_list" , methods=['POST'])
-@programmer_token_required
-def route_white_list(maintainer):
-    data = request.get_json()
-    programmers_data = programmers.search_programmer(maintainer)
-    if programmers_data.admin == False:
-        return jsonify({"status" : "access denied"})
-    st1 = programmers.white_list(data)['status']
-    st2 = users.white_list(data)['status']
-    if st1 == "successful" or st2 == "successful":
-        return jsonify({"status" : "successful"})     
-    return jsonify({"status" : "not found"})
+@admin_api.post("/admin/delete_user")
+async def admin_delete_user(req:AdminRequest,admin=Depends(get_admin_programmer)):
+    try:
+        await users_db.delete_user(req.email)
+        return JSONResponse()
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+        ) from nfe
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="request failed"
+        ) from ex
+        
 
-@app.route("/admin/grant" , methods=['POST'])
-@programmer_token_required
-def route_grant_admin(maintainer):
-    data = request.get_json()
-    programmers_data = programmers.search_programmer(maintainer)
-    if programmers_data.admin == False:
-        return jsonify({"status" : "access denied"})
-    return jsonify(programmers.grant(data))
+@admin_api.post("/admin/delete_programmer")
+async def admin_delete_programmer(req:AdminRequest,admin=Depends(get_admin_programmer)):
+    try:
+        await programmers_db.delete_programmer(req.email)
+        return JSONResponse()
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+        ) from nfe
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="request failed"
+        ) from ex
 
-@app.route("/admin/revoke" , methods=['POST'])
-@programmer_token_required
-def route_revoke_admin(maintainer):
-    data = request.get_json()
-    programmers_data = programmers.search_programmer(maintainer)
-    if programmers_data.admin == False:
-        return jsonify({"status" : "access denied"})
-    return jsonify(programmers.revoke(data))
+@admin_api.post("/admin/black_list")
+async def admin_blacklist(req:AdminRequest,admin=Depends(get_admin_programmer)):
+    try:
+        count = 2
+        try:
+            await programmers_db.black_list(req.email)
+        except NotFoundError:
+            count-=1
+        try:
+            await users_db.black_list(req.email)
+        except NotFoundError:
+            count-=1
+        if count == 0:
+            raise NotFoundError("no such email registered")
+        return JSONResponse()
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+        ) from nfe
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="request failed"
+        ) from ex
 
+@admin_api.post("/admin/white_list")
+async def admin_whitelist(req:AdminRequest,admin=Depends(get_admin_programmer)):
+    try:
+        count = 2
+        print("bypass")
+        try:
+            await programmers_db.white_list(req.email)
+        except NotFoundError:
+            count-=1
+        try:
+            await users_db.white_list(req.email)
+        except NotFoundError:
+            count-=1
+        if count == 0:
+            raise NotFoundError("no such email registered")
+        return JSONResponse()
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+        ) from nfe
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="request failed"
+        ) from ex
+
+@admin_api.post("/admin/grant")
+async def admin_grant(req:AdminRequest,admin=Depends(get_admin_programmer)):
+    try:
+        await programmers_db.grant(req.email)
+        return JSONResponse()
+    except AttributeError as ae:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail="email is blacklisted"
+        )
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+        ) from nfe
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="request failed"
+        ) from ex
+
+@admin_api.post("/admin/revoke")
+async def admin_revoke(req:AdminRequest,admin=Depends(get_admin_programmer)):
+    try:
+        await programmers_db.revoke(req.email)
+        return JSONResponse()
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+        ) from nfe
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="request failed"
+        ) from ex

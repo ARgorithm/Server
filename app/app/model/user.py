@@ -1,144 +1,84 @@
-import os
-from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
+"""Model for User and utility classes
+"""
 import uuid
+from pydantic import BaseModel
 
+from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError
 
-class User:
-    
-    def __init__(self,public_id,email,password,black_list=False):
-        self.email = email
-        self.password = password
-        self.public_id = public_id
-        self.black_list = black_list
+class User(Account):
+    """User Model
+    """
+    public_id:str
+    black_list:bool
     
     def describe(self,hide_password=True):
-        res = {
-            "email" : self.email,
-            "password" : self.password,
-            "public_id" : self.public_id,
-            "black_list" : self.black_list
-        }
+        """returns representation of User class"""
+        res = self.__dict__
         if hide_password:
             del res['password']
         return res
 
-    def verify_password(self,attempt):
-        curr = check_password_hash(self.password,attempt)
-        return curr
+class UserManager():
+    """Acts as manager for all the users in database
+    """
 
+    def __init__(self,source):
+        self.register = source
 
-class UserManager:
-    def __init__(self,register):
-        self.register = register
+    async def search_email(self,email:str):
+        """searches user by email
+        """
+        data = await self.register.search('email',email)
+        if data:
+            return User(**data[0])
+        raise NotFoundError("user not found")
+
+    async def search_public_id(self,public_id:str):
+        """searches user by public_id
+        """
+        data = await self.register.search('public_id',public_id)
+        if data:
+            return User(**data[0])
+        raise NotFoundError("user not found")
     
-    def search_user(self,email):
+    async def register_user(self,data:Account):
+        """registers new user account
+        """
         try:
-            data = self.register.search(name=email,key="email")
-            return User(
-                public_id=data['public_id'],
-                email=data['email'],
-                password=data['password'],
-                black_list=data['black_list']
-            )
-        except:
-            return None
+            existing = await self.search_email(data.email)
+            raise AlreadyExistsError("email already registered") 
+        except NotFoundError as nfe:
+            pass
+        new_account = User(
+            email=data.email,
+            password=get_password_hash(data.password),
+            public_id=str(uuid.uuid4()),
+            black_list=False
+        )
+        await self.register.insert(new_account)
+        return True
 
-    def search_public_id(self,public_id):
-        try:
-            data = self.register.search(name=public_id,key="public_id")
-            return User(
-                public_id=data['public_id'],
-                email=data['email'],
-                password=data['password'],
-                black_list=data['black_list']
-            )
-        except:
-            return None
+    async def delete_user(self,email:str):
+        """deletes existing user
+        """
+        existing = await self.search_email(email)
+        await self.register.delete(email)
+        return True
 
-    def register_user(self,data):
-        try:
-            if self.search_user(data['email']) == None:
-                user = User(
-                    public_id=str(uuid.uuid4()),
-                    email=data['email'],
-                    password=generate_password_hash(data['password']),
-                )
-                self.register.insert(key=data['email'],value=user.describe(hide_password=False))
-                return {"status":"success"}
-            else:
-                return {"status":"already exists"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
+    async def black_list(self,email:str):
+        """blacklists user
+        """
+        user = await self.search_email(email)
+        user.black_list = True
+        await self.register.update(email,user)
+        return True
 
-    def login(self,data):
-        try:
-            user = self.search_user(data['email'])
-            if user == None:
-                return {
-                    "status" : "Not Found"
-                }
-            if user.verify_password(data['password']):
-                token = jwt.encode({ 
-                    'public_id': user.public_id, 
-                    'exp' : datetime.utcnow() + timedelta(days=30) 
-                }, os.getenv("SECRET_KEY")) 
-                return {
-                    "status" : "successful",
-                    "token" : token
-                }
-            return {
-                "status" : "failure"
-            }
-            
-            
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
+    async def white_list(self,email:str):
+        """whitelists user
+        """
+        user = await self.search_email(email)
+        user.black_list = False
+        await self.register.update(email,user)
+        return True
 
-    def delete(self,data):
-        try:
-            user = self.search_user(data['email'])
-            if user == None:
-                return {
-                    "status" : "Not Found"
-                }
-            self.register.delete(key="email",value=user.email)
-            return {"status" : "successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
-
-    def black_list(self,data):
-        try:
-            user = self.search_user(data['email'])
-            if user == None:
-                return {
-                    "status" : "Not Found"
-                }
-            user.black_list = True
-            self.register.update({"email" : user.email},{"black_list" : user.black_list})
-            return {"status":"successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
-
-    def white_list(self,data):
-        try:
-            user = self.search_user(data['email'])
-            if user == None:
-                return {
-                    "status" : "Not Found"
-                }
-            user.black_list = False
-            self.register.update({"email" : user.email},{"black_list" : user.black_list})
-            return {"status":"successful"}
-        except Exception as e:
-            return {"status" : "error",
-                "message" : str(e)
-            }
+    
