@@ -26,6 +26,17 @@ async def argorithms_list():
             detail="Unable to access argorithms"
         ) from ex
 
+@argorithms_api.get("/argorithms/view/{argorithmid}")
+async def argorithms_view(argorithmid:str):
+    try:
+        data = await argorithm_db.search(argorithmid)
+        return JSONResponse(data.__dict__)
+    except NotFoundError as nfe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="no such argorithm"
+        )
+
 @argorithms_api.post("/argorithms/insert")
 async def argotihms_insert(file: UploadFile = File(...),data:UploadFile = File(...),maintainer:str=Depends(get_current_programmer)):
     try:
@@ -49,6 +60,7 @@ async def argotihms_insert(file: UploadFile = File(...),data:UploadFile = File(.
             detail="should be a .py file"
         ) from ae
     except Exception as ex:
+        print(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"
@@ -70,6 +82,7 @@ async def argorithms_run(exec:ExecutionRequest,user:str=Depends(get_current_user
             detail="argorithm not found"
         ) from nfe
     except Exception as ex:
+        print(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"
@@ -94,6 +107,7 @@ async def argotihms_update(file: UploadFile = File(...),data:UploadFile = File(.
             detail="Only argorithm maintaner or admin can perform this action"
         )
     except Exception as ex:
+        print(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"
@@ -106,6 +120,8 @@ class DeletionRequest(BaseModel):
 @argorithms_api.post("/argorithms/delete")
 async def argorithms_delete(d:DeletionRequest,maintainer:str=Depends(get_current_programmer)):
     try:
+        d = d.__dict__
+        d['maintainer'] = maintainer
         flag = await argorithm_db.delete(d)
         return JSONResponse()
     except NotFoundError as nfe:
@@ -119,6 +135,7 @@ async def argorithms_delete(d:DeletionRequest,maintainer:str=Depends(get_current
             detail="Only argorithm maintaner or admin can perform this action"
         )
     except Exception as ex:
+        print(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"

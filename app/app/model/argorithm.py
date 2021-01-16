@@ -86,12 +86,12 @@ class ARgorithmManager():
                     )
                     await self.register.insert(metadata)
                     return True
-                except Exception as e:
-                    raise e
+                except Exception as ex:
+                    raise ex
                     os.remove(os.path.join(STORAGE_FOLDER , final_filename))
             raise AssertionError("File should be a python file [.py]")
         except Exception as ex:
-            raise e
+            raise ex
         
 
     async def update(self,data,file):
@@ -142,7 +142,6 @@ class ARgorithmManager():
     async def delete(self,data):
         """deletes argorithm
         """
-        data = data.__dict__
         function = await self.search(data['argorithmID'])
         try:
             assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")

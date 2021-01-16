@@ -7,6 +7,7 @@ from datetime import timedelta
 from ..core.auth import get_current_user,create_access_token,Token
 from ..core.database import users_db
 from ..model.utils import Account,NotFoundError,AlreadyExistsError
+from ..main import config
 
 users_api = APIRouter()
 
@@ -17,12 +18,19 @@ async def user_token_verify(user:str=Depends(get_current_user)):
 @users_api.post("/users/register")
 async def user_register(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
+        if config.AUTH != "ENABLED":
+            raise AttributeError("Auth disabled")
         new_acc = Account(
             email=form_data.username,
             password=form_data.password
         )
         await users_db.register_user(new_acc)
         return JSONResponse(content={"status":"successful"})
+    except AttributeError as ae:
+        raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="AUTH diabled"        
+    ) from ae
     except AlreadyExistsError as aee:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -37,6 +45,8 @@ async def user_register(form_data: OAuth2PasswordRequestForm = Depends()):
 @users_api.post("/users/login",response_model=Token)
 async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
+        if config.AUTH != "ENABLED":
+            raise AttributeError("Auth disabled")
         acc = await users_db.search_email(form_data.username)
         assert not acc.black_list, HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,6 +62,11 @@ async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
         status_code=status.HTTP_404_NOT_FOUND,
         detail="email not found"        
     ) from nfe
+    except AttributeError as ae:
+        raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="AUTH diabled"        
+    ) from ae
     except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
