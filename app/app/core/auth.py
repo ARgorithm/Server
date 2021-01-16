@@ -10,7 +10,7 @@ from datetime import datetime,timedelta
 from jose import JWTError, jwt
 from pydantic import BaseModel 
 
-from ..main import config
+from ..main import config,logger
 from .database import users_db,programmers_db
 from ..model.utils import NotFoundError
 
@@ -65,6 +65,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Blacklisted credentials"
             )
+        logger.debug(f"User Credentials used : {email}")
         return email
     except JWTError:
         raise credentials_exception
@@ -94,6 +95,7 @@ async def get_current_programmer(token: str = Depends(oauth2_scheme)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Blacklisted credentials"
             )
+        logger.debug(f"Programmer Credentials used : {email}")
         return email
     except JWTError:
         raise credentials_exception
@@ -123,6 +125,7 @@ async def get_admin_programmer(token: str = Depends(oauth2_scheme)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Admin priveleges needed"
             )
+        logger.debug(f"Admin Credentials used : {email}")
         return email
     except JWTError:
         raise credentials_exception

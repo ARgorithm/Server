@@ -3,6 +3,7 @@
 import uuid
 from pydantic import BaseModel
 
+from ..main import logger
 from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError
 
 class User(Account):
@@ -56,6 +57,7 @@ class UserManager():
             black_list=False
         )
         await self.register.insert(new_account)
+        logger.info(f"new user - {new_account.email}")
         return True
 
     async def delete_user(self,email:str):
@@ -63,6 +65,7 @@ class UserManager():
         """
         existing = await self.search_email(email)
         await self.register.delete(email)
+        logger.info(f"deleted user - {existing.email}")
         return True
 
     async def black_list(self,email:str):
@@ -71,6 +74,7 @@ class UserManager():
         user = await self.search_email(email)
         user.black_list = True
         await self.register.update(email,user)
+        logger.info(f"blacklisted user - {user.email}")
         return True
 
     async def white_list(self,email:str):
@@ -79,6 +83,7 @@ class UserManager():
         user = await self.search_email(email)
         user.black_list = False
         await self.register.update(email,user)
+        logger.info(f"whitelisted user - {user.email}")
         return True
 
     

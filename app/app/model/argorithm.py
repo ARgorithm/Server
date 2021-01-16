@@ -5,7 +5,7 @@ import shutil
 import importlib
 from typing import Optional
 from pydantic import BaseModel,EmailStr,Field
-from ..main import STORAGE_FOLDER,config
+from ..main import STORAGE_FOLDER,config,logger
 from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
 
 class ARgorithm(BaseModel):
@@ -85,12 +85,15 @@ class ARgorithmManager():
                         example=data["default"]
                     )
                     await self.register.insert(metadata)
+                    logger.info(f"inserted new argorithm : {metadata.argorithmID} by {metadata.maintainer}")
                     return True
                 except Exception as ex:
-                    raise ex
                     os.remove(os.path.join(STORAGE_FOLDER , final_filename))
+                    logger.exception(ex)
+                    raise ex
             raise AssertionError("File should be a python file [.py]")
         except Exception as ex:
+            logger.exception(ex)
             raise ex
         
 
@@ -101,7 +104,7 @@ class ARgorithmManager():
         try:
             assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
             function = ARgorithm(
-                    maintainer=data['maintainer'],
+                    maintainer=function.maintainer,
                     argorithmID=data['argorithmID'],
                     filename=function.filename,
                     function=data['function'],
@@ -112,12 +115,14 @@ class ARgorithmManager():
             await self.register.update(function.argorithmID,function)
             with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
                 shutil.copyfileobj(file.file,buffer)
+            logger.info(f"inserted new argorithm : {function.argorithmID} by {data['maintainer']}")
             return True
         except AttributeError as ae:
             raise ae
         except AssertionError as ae:
             raise ae
         except Exception as ex:
+            logger.exception(ex)
             raise ex
 
     async def process(self,data):
@@ -137,6 +142,8 @@ class ARgorithmManager():
                     "data" : await function.run_code(None)
                 }
             except Exception as ex:
+                logger.exception(ex)
+                logger.critical(f"{function.argorithmID} raised an expection")
                 raise ex
 
     async def delete(self,data):
@@ -148,10 +155,10 @@ class ARgorithmManager():
             to_be_deleted = function.filename
             await self.register.delete(function.argorithmID)
             os.remove(os.path.join(STORAGE_FOLDER , to_be_deleted))
-            return {"status" : "successful"}
+            logger.info(f"deleted argorithm : {function.argorithmID} by {data['maintainer']}")
+            return True
         except AssertionError as er:
             raise er
-        except FileNotFoundError as fe:
-            pass
         except Exception as ex:
+            logger.exception(ex)
             raise ex

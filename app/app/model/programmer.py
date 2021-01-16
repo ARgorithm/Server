@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 from pydantic import BaseModel
 
+from ..main import logger
 from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError
 
 class Programmer(Account):
@@ -60,15 +61,17 @@ class ProgrammerManager():
                 black_list=False
             )
             await self.register.insert(new_account)
+            logger.info(f"new programmer - {new_account.email}")
             return True
         except Exception as ex:
-            print(ex)
+            logger.exception(ex)
             raise ex
 
     async def delete_programmer(self,email:str):
         """deletes existing programmer"""
         existing = await self.search_email(email)
         await self.register.delete(email)
+        logger.info(f"deleted programmer - {existing.email}")
         return True
 
     async def black_list(self,email:str):
@@ -77,6 +80,7 @@ class ProgrammerManager():
         programmer.black_list = True
         programmer.admin = False
         await self.register.update(email,programmer)
+        logger.info(f"blacklisted programmer - {programmer.email}")
         return True
 
     async def white_list(self,email:str):
@@ -84,6 +88,7 @@ class ProgrammerManager():
         programmer = await self.search_email(email)
         programmer.black_list = False
         await self.register.update(email,programmer)
+        logger.info(f"whitelisted programmer - {programmer.email}")
         return True
     
     async def grant(self,email:str):
@@ -93,6 +98,7 @@ class ProgrammerManager():
             raise AttributeError("account is blacklisted")
         programmer.admin = True
         await self.register.update(email,programmer)
+        logger.info(f"granted admin access - {programmer.email}")
         return True
 
     async def revoke(self,email:str):
@@ -100,4 +106,5 @@ class ProgrammerManager():
         programmer = await self.search_email(email)
         programmer.admin = False
         await self.register.update(email,programmer)
+        logger.info(f"revoked admin access - {programmer.email}")
         return True

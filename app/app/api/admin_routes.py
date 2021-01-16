@@ -76,7 +76,6 @@ async def admin_blacklist(req:AdminRequest,admin=Depends(get_admin_programmer)):
 async def admin_whitelist(req:AdminRequest,admin=Depends(get_admin_programmer)):
     try:
         count = 2
-        print("bypass")
         try:
             await programmers_db.white_list(req.email)
         except NotFoundError:

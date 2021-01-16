@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
-from ..main import config
+from ..main import config,logger
 from ..model.argorithm import ARgorithm
 from ..model.utils import AlreadyExistsError,NotFoundError
 from ..core.database import argorithm_db
@@ -20,7 +20,7 @@ async def argorithms_list():
         data = await argorithm_db.list()
         return JSONResponse(content=data)
     except Exception as ex:
-        print(ex)
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to access argorithms"
@@ -60,7 +60,7 @@ async def argotihms_insert(file: UploadFile = File(...),data:UploadFile = File(.
             detail="should be a .py file"
         ) from ae
     except Exception as ex:
-        print(ex)
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"
@@ -82,7 +82,7 @@ async def argorithms_run(exec:ExecutionRequest,user:str=Depends(get_current_user
             detail="argorithm not found"
         ) from nfe
     except Exception as ex:
-        print(ex)
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"
@@ -107,7 +107,7 @@ async def argotihms_update(file: UploadFile = File(...),data:UploadFile = File(.
             detail="Only argorithm maintaner or admin can perform this action"
         )
     except Exception as ex:
-        print(ex)
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"
@@ -135,7 +135,7 @@ async def argorithms_delete(d:DeletionRequest,maintainer:str=Depends(get_current
             detail="Only argorithm maintaner or admin can perform this action"
         )
     except Exception as ex:
-        print(ex)
+        logger.exception(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="contact administrator"

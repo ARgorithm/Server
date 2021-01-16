@@ -7,7 +7,7 @@ from motor import motor_asyncio
 from databases import Database
 from pydantic import BaseModel
 
-from ..main import config,STORAGE_FOLDER,app
+from ..main import config,STORAGE_FOLDER,app,logger
 from ..model.argorithm import ARgorithm,ARgorithmManager
 from ..model.programmer import Programmer,ProgrammerManager
 from ..model.user import User,UserManager
@@ -123,7 +123,7 @@ class MongoSource:
     """
     def __init__(self,label):
         assert label in ['user','programmer','argorithm']
-        print(f"Connecting to mongodb collection={label}...")
+        logger.info(f"Connecting to mongodb collection={label}...")
         client = motor_asyncio.AsyncIOMotorClient(
             config.DB_ENDPOINT,port=config.DB_PORT,
             username=config.DB_USERNAME,
@@ -160,7 +160,7 @@ class MongoSource:
                     del document["_id"]
                 res.append(document)
         except Exception as e:
-            print(e)
+            logger.exception(e)
             raise e
         if len(res) > 0:
             return res
@@ -185,7 +185,7 @@ class MongoSource:
 
 argorithm_db , users_db , programmers_db = None , None , None
 if config.DATABASE == "DISABLED":
-    print("Connecting to sqlite...")
+    logger.info("Connecting to sqlite...")
     argorithm_db = ARgorithmManager(source=FileSource())
 else:
     argorithm_db = ARgorithmManager(source=MongoSource(label="argorithm"))
@@ -210,4 +210,4 @@ async def admincreds():
                 await programmers_db.register_programmer(admin_account,admin=True)
             except Exception as ex:
                 pass
-    print("Admin accounts created")
+    logger.info("Admin accounts created")
