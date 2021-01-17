@@ -3,10 +3,19 @@
 import os
 import shutil
 import importlib
+import time
+import logging
 from typing import Optional
 from pydantic import BaseModel,EmailStr,Field
 from ..main import STORAGE_FOLDER,config,logger
 from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
+
+execution_logger = logging.Logger(__name__)
+execution_handler =  logging.FileHandler(os.path.join(STORAGE_FOLDER,'process.log'),'a')
+execution_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter(fmt='[%(levelname)s] : %(asctime)s - %(message)s')
+execution_handler.setFormatter(formatter)
+execution_logger.addHandler(execution_handler)
 
 class ARgorithm(BaseModel):
     """The model class for argorithms
@@ -27,12 +36,17 @@ class ARgorithm(BaseModel):
     async def run_code(self,parameters):
         """executes argorithm code and returns StateSet
         """
+        start_time = time.time()
         filepath = "app.uploads." + self.filename[:-3]
         module = importlib.import_module(filepath)
         func = getattr(module , self.function)
         parameters = self.example if parameters==None else parameters
         output = func(**parameters)
         res = [x.content for x in output.states]
+
+        process_time = (time.time() - start_time) * 1000
+        formatted_process_time = '{0:.2f}'.format(process_time)
+        execution_logger.info(f"id={self.argorithmID} - time={formatted_process_time}ms")
         return res
 
 class ARgorithmManager():
@@ -130,6 +144,7 @@ class ARgorithmManager():
         """
         data = data.__dict__
         function = await self.search(data['argorithmID'])
+        execution_logger.info(f"Process started on {function.argorithmID}")
         try:
             return {
                 "status" : "run_parameters",
@@ -137,11 +152,13 @@ class ARgorithmManager():
                 }
         except:
             try:
+                execution_logger.warn("Parameters could not be parsed properly")
                 return {
                     "status" : "run_example",
                     "data" : await function.run_code(None)
                 }
             except Exception as ex:
+                execution_logger.error(ex)
                 logger.exception(ex)
                 logger.critical(f"{function.argorithmID} raised an expection")
                 raise ex

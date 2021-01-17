@@ -29,22 +29,19 @@
                         If running toolkit on same machine as server just use the <span class="code">--local</span> option in the command
                         line arguments. If using toolkit on a different machine then on the command line use: 
                     </p>
-
+                    <!-- ARgorithm configure
+                    Enter server endpoint [http://localhost]:    
+                    [SUCCESS]: CONNECTED
+                    Cloud requests will now go to http://localhost -->
                     <div id="termynal" data-termynal data-ty-typeDelay="40" data-ty-lineDelay="700">
-                        <span data-ty="input">pip install spacy</span>
+                        <span data-ty="input">pip install ARgorithToolkit</span>
                         <span data-ty="progress"></span>
-                        <span data-ty>Successfully installed spacy</span>
+                        <span data-ty>Successfully installed ARgorithToolkit</span>
                         <span data-ty></span>
-                        <span data-ty="input">python -m spacy download en</span>
-                        <span data-ty="progress"></span>
-                        <span data-ty>Installed model 'en'</span>
-                        <span data-ty></span>
-                        <span data-ty="input">python</span>
-                        <span data-ty="input" data-ty-prompt=">>>">import spacy</span>
-                        <span data-ty="input" data-ty-prompt=">>>">nlp = spacy.load('en')</span>
-                        <span data-ty="input" data-ty-prompt=">>>">doc = nlp(u'Hello world')</span>
-                        <span data-ty="input" data-ty-prompt=">>>">print([(w.text, w.pos_) for w in doc])</span>
-                        <span data-ty>[('Hello', 'INTJ'), ('world', 'NOUN')]</span>
+                        <span data-ty="input">ARgorithm configure</span>
+                        <span data-ty="input" data-ty-prompt="Enter server endpoint :">http://sample.com</span>
+                        <span data-ty>[SUCCESS]: CONNECTED</span>
+                        <span data-ty>Cloud requests will now go to http://sample.com</span>
                         <a href="#" data-terminal-control="">restart ↻</a>
                     </div>
                     <script src="/static/termynal.js" data-termynal-container="#termynal"></script>
