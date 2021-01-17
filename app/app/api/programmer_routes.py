@@ -1,39 +1,97 @@
-from flask import jsonify , request , make_response
-import json
-from .utils import programmer_token_required , auth_required
-from ..core.database import programmers , algorithms 
-from ..main import app
+from fastapi import APIRouter,Depends,status
+from fastapi.exceptions import HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
+from datetime import timedelta
 
-@app.route("/auth",methods=['GET'])
-@auth_required
-def route_auth_check():
-    return jsonify({"status":True})
+from ..main import config
+from ..core.auth import get_current_programmer,Token,create_access_token
+from ..core.database import programmers_db,users_db
+from ..model.utils import Account,NotFoundError,AlreadyExistsError
 
-@app.route("/programmers/verify" , methods=['GET'])
-@programmer_token_required
-def route_token_verify(email):
-    return jsonify({"status":True})
+programmers_api = APIRouter()
 
-@app.route("/programmers/<email>" , methods=['GET'])
-@auth_required
-def route_programmers(email):
-    programmers_data = programmers.search_programmer(email)
-    if programmers_data == None:
-        return {"status" : "Not Found"}
-    programmers_data = programmers_data.describe()
-    return f"""
-        programmer_email : {programmers_data['email']}
-        Joined on {programmers_data['join_time']}
-    """
+@programmers_api.get("/auth/")
+def programmers_info():
+    if config.AUTH == "DISABLED":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="authentication disabled"
+        )
+    return JSONResponse()
 
-@app.route("/programmers/register" , methods=['POST'])
-@auth_required
-def route_register_programmer():
-    data = request.get_json()
-    return jsonify(programmers.register_programmer(data=data))
+@programmers_api.post("/programmers/verify")
+async def programmer_token_verify(user:str=Depends(get_current_programmer)):
+    return JSONResponse()
 
-@app.route("/programmers/login" , methods=['POST'])
-@auth_required
-def route_login():
-    data = request.get_json()
-    return make_response(jsonify(programmers.login(data)),201)
+@programmers_api.post("/programmers/register")
+async def programmer_register(form_data: OAuth2PasswordRequestForm = Depends()):
+    try:
+        if config.AUTH != "ENABLED":
+            raise AttributeError("Auth disabled")
+        new_acc = Account(
+            email=form_data.username,
+            password=form_data.password
+        )
+        await programmers_db.register_programmer(new_acc)
+        try:
+            await users_db.register_user(new_acc)
+        except NotFoundError as nfe:
+            pass
+        return JSONResponse(content={"status":"successful"})
+    except AttributeError as ae:
+        raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="AUTH diabled"        
+    ) from ae
+    except AlreadyExistsError as aee:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="email is already registered"
+        ) from aee
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="account registration failed"
+        ) from ex
+
+@programmers_api.post("/programmers/login" , response_model=Token)
+async def programmer_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    try:
+        if config.AUTH != "ENABLED":
+            raise AttributeError("Auth disabled")
+        acc = await programmers_db.search_email(form_data.username)
+        assert not acc.black_list, HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="blacklisted credentials"
+        )
+        access = acc.log_in(form_data.password)
+        if access:
+            token = create_access_token(data={"sub" : acc.email},expires_delta=timedelta(days=1))
+            return {"access_token": token, "token_type": "bearer"}
+        raise ValueError("Incorrect Password")
+    except AttributeError as ae:
+        raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="AUTH diabled"        
+    ) from ae
+    except NotFoundError as nfe:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="email not found"        
+    ) from nfe
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="login failed"
+        ) from ex
+
+# @programmers_api.post("/programmers/{email}")
+# def programmer_lookup(email):
+#     pass

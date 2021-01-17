@@ -1,4 +1,4 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.8
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
 
 LABEL maintainer="Alan John <alansandra2013@gmail.com>"
 
@@ -11,7 +11,7 @@ ENV SECRET_KEY=clawtime
 ENV AUTH=DISABLED
 ENV MAIL=DISABLED
 ENV DATABASE=DISABLED
-ENV DB_ENDPOINT=mongodb
+ENV DB_ENDPOINT=
 ENV DB_PORT=27017
 ENV DB_USERNAME=root
 ENV DB_PASSWORD=example

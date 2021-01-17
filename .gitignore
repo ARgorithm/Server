@@ -3,6 +3,7 @@ data/
 reloadserver.sh
 refresh
 docker-compose.yml
+app/app/uploads/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
