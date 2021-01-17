@@ -6,6 +6,5 @@ python-jose
 passlib[bcrypt]
 motor
 pytest
-pymongo[srv]
 ARgorithmToolkit
 PyJWT
