@@ -3,7 +3,8 @@ FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
 LABEL maintainer="Alan John <alansandra2013@gmail.com>"
 
 COPY ./app/requirements.txt ./
-RUN pip install -U pip && \
+RUN update-ca-certificates && \
+    pip install -U pip && \
     pip install -r requirements.txt
 COPY ./app /app
 

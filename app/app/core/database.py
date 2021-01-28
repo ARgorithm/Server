@@ -3,7 +3,7 @@
 import os
 import asyncio
 import json
-from motor import motor_asyncio
+from motor import motor_asyncio,motor_tornado
 from databases import Database
 from pydantic import BaseModel
 
@@ -124,11 +124,14 @@ class MongoSource:
     def __init__(self,label):
         assert label in ['user','programmer','argorithm']
         logger.info(f"Connecting to mongodb collection={label}...")
-        client = motor_asyncio.AsyncIOMotorClient(
-            config.DB_ENDPOINT,port=config.DB_PORT,
-            username=config.DB_USERNAME,
-            password=config.DB_PASSWORD
-        )
+        if "mongodb+srv" in config.DB_ENDPOINT:
+            client = motor_tornado.MotorClient(config.DB_ENDPOINT)
+        else:    
+            client = motor_asyncio.AsyncIOMotorClient(
+                config.DB_ENDPOINT,port=config.DB_PORT,
+                username=config.DB_USERNAME,
+                password=config.DB_PASSWORD
+            )
         database = client['argorithmdb']
         self.label = label
         self.collection = database[self.label]

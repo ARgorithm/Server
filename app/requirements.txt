@@ -5,6 +5,8 @@ databases[sqlite]
 python-jose
 passlib[bcrypt]
 motor
+tornado
+dnspython
 pytest
 ARgorithmToolkit
 PyJWT

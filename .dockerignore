@@ -3,4 +3,5 @@ data/
 refresh
 reloadserver.sh
 *.yml
+*.yaml
 .env
