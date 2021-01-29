@@ -27,6 +27,7 @@ class ARgorithm(BaseModel):
     parameters:dict={}
     description:str=""
     example:dict={}
+    filedata:Optional[bytes]
 
     def __str__(self):
         """Return ArgorithmID
@@ -37,7 +38,7 @@ class ARgorithm(BaseModel):
         """executes argorithm code and returns StateSet
         """
         start_time = time.time()
-        filepath = "app.uploads." + self.filename[:-3]
+        filepath = self.filename[:-3]
         module = importlib.import_module(filepath)
         func = getattr(module , self.function)
         parameters = self.example if parameters==None else parameters
@@ -86,8 +87,11 @@ class ARgorithmManager():
                 while os.path.isfile(os.path.join(STORAGE_FOLDER, final_filename)):
                     final_filename = filename[:-3]+f"_{count}"+filename[-3:]
                     count+=1
-                with open(os.path.join(STORAGE_FOLDER, final_filename),'wb+') as buffer:
-                    shutil.copyfileobj(file.file,buffer)
+                if config.DATABASE == "MONGO":
+                    pass 
+                else:
+                    with open(os.path.join(STORAGE_FOLDER, final_filename),'wb+') as buffer:
+                        shutil.copyfileobj(file.file,buffer)
                 try:
                     metadata = ARgorithm(
                         maintainer=data['maintainer'],
@@ -98,6 +102,8 @@ class ARgorithmManager():
                         description=data['description'],
                         example=data["default"]
                     )
+                    if config.DATABASE == "MONGO":
+                        metadata.filedata=file.file.read()
                     await self.register.insert(metadata)
                     logger.info(f"inserted new argorithm : {metadata.argorithmID} by {metadata.maintainer}")
                     return True
@@ -127,8 +133,11 @@ class ARgorithmManager():
                     example=data["default"]
                 )
             await self.register.update(function.argorithmID,function)
-            with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
-                shutil.copyfileobj(file.file,buffer)
+            if config.DATABASE == "MONGO":
+                function.filedata = file.file.read()
+            else:
+                with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
+                    shutil.copyfileobj(file.file,buffer)
             logger.info(f"inserted new argorithm : {function.argorithmID} by {data['maintainer']}")
             return True
         except AttributeError as ae:
@@ -144,19 +153,28 @@ class ARgorithmManager():
         """
         data = data.__dict__
         function = await self.search(data['argorithmID'])
+        if config.DATABASE == "MONGO":
+            with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
+                buffer.write(function.filedata)
         execution_logger.info(f"Process started on {function.argorithmID}")
         try:
-            return {
+            res = {
                 "status" : "run_parameters",
                 "data" : await function.run_code(data["parameters"])
                 }
+            if config.DATABASE == "MONGO":
+                os.remove(os.path.join(STORAGE_FOLDER , function.filename))
+            return res
         except:
             try:
                 execution_logger.warn("Parameters could not be parsed properly")
-                return {
+                res = {
                     "status" : "run_example",
                     "data" : await function.run_code(None)
                 }
+                if config.DATABASE == "MONGO":
+                    os.remove(os.path.join(STORAGE_FOLDER , function.filename))
+                return res
             except Exception as ex:
                 execution_logger.error(ex)
                 logger.exception(ex)
@@ -171,7 +189,8 @@ class ARgorithmManager():
             assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
             to_be_deleted = function.filename
             await self.register.delete(function.argorithmID)
-            os.remove(os.path.join(STORAGE_FOLDER , to_be_deleted))
+            if config.DATABASE != "MONGO":
+                os.remove(os.path.join(STORAGE_FOLDER , to_be_deleted))
             logger.info(f"deleted argorithm : {function.argorithmID} by {data['maintainer']}")
             return True
         except AssertionError as er:

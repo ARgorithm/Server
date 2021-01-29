@@ -5,7 +5,7 @@ services:
         ports: 
             - 80:80
         volumes:
-            - local-uploads:/app/app/uploads
+            - local-uploads:/tmp/argorithm
 volumes:
     local-uploads:
         driver: local

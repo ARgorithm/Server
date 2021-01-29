@@ -2,9 +2,10 @@
 @import url("https://fonts.googleapis.com/css?family=Inconsolata");
 
 body{
-  font-family: "Inconsolata";
+  font-family: "IBM Plex Sans";
   margin: 0;
-  background-color: #f2f2f2;
+  background-color: #212529;
+  color: white;
 }
 
 .navbar {
@@ -43,7 +44,7 @@ body{
 }
 
 .row{
-  margin-top: 2em;
+  margin-top: 0.75em;
   display: flex;
   flex-wrap: wrap;
   margin-left: -15px;
@@ -66,7 +67,7 @@ body{
 
 .instructions{
   text-align:start;
-  font-family: "Inconsolata";
+  font-family: "IBM Plex Sans";
 }
 
 .instructions h2{
@@ -112,8 +113,8 @@ li{
 }
 
 a{
-  text-decoration: none;
-  color: #606060;
+  text-decoration: dotted;
+  color: #ffd152;
 }
 
 .cool{

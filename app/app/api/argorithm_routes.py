@@ -18,6 +18,8 @@ argorithms_api = APIRouter()
 async def argorithms_list():
     try:
         data = await argorithm_db.list()
+        for row in data:
+            del row['filedata']
         return JSONResponse(content=data)
     except Exception as ex:
         logger.exception(ex)
@@ -30,7 +32,9 @@ async def argorithms_list():
 async def argorithms_view(argorithmid:str):
     try:
         data = await argorithm_db.search(argorithmid)
-        return JSONResponse(data.__dict__)
+        res = data.__dict__
+        del res['filedata']
+        return JSONResponse(res)
     except NotFoundError as nfe:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

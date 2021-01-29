@@ -49,7 +49,8 @@ class FileSource:
             function varchar,
             description varchar,
             parameters varchar,
-            example varchar
+            example varchar,
+            filedata varchar
         )"""
         await self.database.execute(query)
 
