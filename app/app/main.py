@@ -1,6 +1,7 @@
 """The main file that has to run by uvicorn
 """
 import os
+import sys
 import uvicorn
 import uuid
 import logging
@@ -13,12 +14,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseSettings,BaseModel
 
-STORAGE_FOLDER = "./app/uploads"
+STORAGE_FOLDER = "/tmp/argorithm"
 if not os.path.exists(os.path.join(os.getcwd(),STORAGE_FOLDER)):
     os.mkdir(STORAGE_FOLDER)
-if not os.path.isfile(os.path.join(os.getcwd(),STORAGE_FOLDER,'__init__.py')):
-    with open(os.path.join(STORAGE_FOLDER,'__init__.py'),'w+') as init:
-        init.write("")
+sys.path.append(STORAGE_FOLDER)
 
 class Settings(BaseSettings):
     """Read env variables from environment

@@ -38,7 +38,7 @@ class ARgorithm(BaseModel):
         """executes argorithm code and returns StateSet
         """
         start_time = time.time()
-        filepath = "app.uploads." + self.filename[:-3]
+        filepath = self.filename[:-3]
         module = importlib.import_module(filepath)
         func = getattr(module , self.function)
         parameters = self.example if parameters==None else parameters

@@ -94,3 +94,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# GCP app engine configs
+app/app.yaml
+app/.gcloudignore
