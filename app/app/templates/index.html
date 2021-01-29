@@ -9,9 +9,6 @@
     <title>ARgorithm</title>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg">
-        <h1><span id="red">AR</span>gorithm</h1>
-    </nav>
     <div class="container">
         <div class="row">
             <div class="col-lg-4" id="logo-panel">
@@ -33,20 +30,29 @@
                     Enter server endpoint [http://localhost]:    
                     [SUCCESS]: CONNECTED
                     Cloud requests will now go to http://localhost -->
+                    
                     <div id="termynal" data-termynal data-ty-typeDelay="40" data-ty-lineDelay="700">
                         <span data-ty="input">pip install ARgorithToolkit</span>
                         <span data-ty="progress"></span>
                         <span data-ty>Successfully installed ARgorithToolkit</span>
                         <span data-ty></span>
                         <span data-ty="input">ARgorithm configure</span>
-                        <span data-ty="input" data-ty-prompt="Enter server endpoint :">http://sample.com</span>
+                        <span data-ty="input" data-ty-prompt="Enter server endpoint :" id="server_ip">http://sample.com</span>
                         <span data-ty>[SUCCESS]: CONNECTED</span>
-                        <span data-ty>Cloud requests will now go to http://sample.com</span>
+                        <span data-ty>Cloud requests will now go to <span id="server_ip_2">http://sample.com</span></span>
                         <a href="#" data-terminal-control="">restart ↻</a>
                     </div>
                     <p>
                         You can check out the routes <a href="/docs">here</a>
                     </p>
+                    <script>
+                        ip = window.location.href
+                        if (ip.endsWith('/')) {
+                            ip = ip.substr(0,ip.length-1)
+                        }
+                        document.getElementById('server_ip').innerText = ip
+                        document.getElementById('server_ip_2').innerText = ip
+                    </script>
                     <script src="/static/termynal.js" data-termynal-container="#termynal"></script>
                 </div>
             </div>
@@ -60,7 +66,7 @@
                     </li>
                     <li>
                         <span class="cool">DOCUMENTATION</span><br>
-                        <a href="https://argorithmtoolkit.readthedocs.io/en/latest/">Read the docs</a>
+                        <a href="https://argorithm.github.io/toolkit/">Read the docs</a>
                     </li>
                     <li>
                         <a class="download"><span class="octicon">
