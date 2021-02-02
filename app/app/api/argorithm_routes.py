@@ -14,6 +14,10 @@ from ..core.auth import get_current_programmer,get_current_user
 
 argorithms_api = APIRouter()
 
+@argorithms_api.get("/argorithm")
+def verify_endpoint():
+    return JSONResponse(content={"auth":config.AUTH})
+
 @argorithms_api.get("/argorithms/list")
 async def argorithms_list():
     try:
