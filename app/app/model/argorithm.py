@@ -100,7 +100,7 @@ class ARgorithmManager():
                         function=data['function'],
                         parameters=data['parameters'],
                         description=data['description'],
-                        example=data["default"]
+                        example=data["example"]
                     )
                     if config.DATABASE == "MONGO":
                         metadata.filedata=file.file.read()
@@ -130,14 +130,14 @@ class ARgorithmManager():
                     function=data['function'],
                     parameters=data['parameters'],
                     description=data['description'],
-                    example=data["default"]
+                    example=data["example"]
                 )
-            await self.register.update(function.argorithmID,function)
             if config.DATABASE == "MONGO":
                 function.filedata = file.file.read()
             else:
                 with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
                     shutil.copyfileobj(file.file,buffer)
+            await self.register.update(function.argorithmID,function)
             logger.info(f"inserted new argorithm : {function.argorithmID} by {data['maintainer']}")
             return True
         except AttributeError as ae:
