@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     DB_PASSWORD:str=""
     ADMIN_EMAIL:str="sample@email.com"
     ADMIN_PASSWORD:str="test123"
+    CACHING:str="DISABLED"
+    REDIS_HOST:str="127.0.0.1"
+    REDIS_PORT:int=6379
+    REDIS_PASSWORD:str=""
 
     class Config:
         case_sensitive=True

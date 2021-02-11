@@ -13,3 +13,4 @@ dnspython
 pytest
 ARgorithmToolkit
 PyJWT
+aioredis
