@@ -15,5 +15,5 @@ scrape_configs:
 
   - job_name: 'argorithm_server'
     static_configs:
-      - targets: ['arserver','localhost']
+      - targets: ['arserver','localhost','argorithm.el.r.appspot.com']
 
