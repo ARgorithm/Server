@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
-from ..main import config,logger
+from ..main import config
+from ..monitoring import logger
 from ..model.argorithm import ARgorithm
 from ..model.utils import AlreadyExistsError,NotFoundError
 from ..core.database import argorithm_db

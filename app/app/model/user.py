@@ -3,7 +3,7 @@
 import uuid
 from pydantic import BaseModel
 
-from ..main import logger
+from ..monitoring import logger
 from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError
 
 class User(Account):

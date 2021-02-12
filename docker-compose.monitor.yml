@@ -1,0 +1,42 @@
+version: "3"
+services:
+    mongodb:
+        image: mongo
+        ports: 
+            - 27017:27017
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME}
+            - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+        volumes:
+            - mongo-data:/data/db
+    arserver:
+        image: alanjohn/argorithm-server:latest
+        ports: 
+            - 80:80
+        environment:
+            - DATABASE=MONGO
+            - AUTH=ENABLED
+            - SECRET_KEY=${SECRET_KEY}
+            - DB_USERNAME=${DB_USERNAME}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_ENDPOINT=mongodb
+            - DB_PORT=27017
+            - ADMIN_EMAIL=${ADMIN_EMAIL}
+            - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+        volumes:
+            - uploads:/tmp/argorithm
+    prometheus:
+        image: prom/prometheus
+        ports:
+        - 9090:9090
+        command:
+        - --config.file=/etc/prometheus/prometheus.yml
+        volumes:
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        depends_on:
+        - arserver
+volumes:
+    mongo-data:
+        driver: local
+    uploads:
+        driver: local

@@ -7,11 +7,12 @@ from motor import motor_asyncio,motor_tornado
 from databases import Database
 from pydantic import BaseModel
 
-from ..main import config,STORAGE_FOLDER,app,logger
+from ..main import config,STORAGE_FOLDER,app
 from ..model.argorithm import ARgorithm,ARgorithmManager
 from ..model.programmer import Programmer,ProgrammerManager
 from ..model.user import User,UserManager
 from ..model.utils import Account , AlreadyExistsError
+from ..monitoring import logger
 
 admin_account = Account(
     email=config.ADMIN_EMAIL,

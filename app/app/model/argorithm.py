@@ -7,9 +7,10 @@ import time
 import logging
 from typing import Optional
 from pydantic import BaseModel,EmailStr,Field
-from ..main import STORAGE_FOLDER,config,logger
+from ..main import STORAGE_FOLDER,config
 from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
 from ..core.cache import LRUCache
+from ..monitoring import logger
 
 execution_logger = logging.Logger(__name__)
 execution_handler =  logging.FileHandler(os.path.join(STORAGE_FOLDER,'process.log'),'a')
