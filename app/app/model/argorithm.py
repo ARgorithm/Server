@@ -10,14 +10,7 @@ from pydantic import BaseModel,EmailStr,Field
 from ..main import STORAGE_FOLDER,config
 from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
 from ..core.cache import LRUCache
-from ..monitoring import logger
-
-execution_logger = logging.Logger(__name__)
-execution_handler =  logging.FileHandler(os.path.join(STORAGE_FOLDER,'process.log'),'a')
-execution_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter(fmt='[%(levelname)s] : %(asctime)s - %(message)s')
-execution_handler.setFormatter(formatter)
-execution_logger.addHandler(execution_handler)
+from ..monitoring import logger,PerformanceMonitor
 
 class ARgorithm(BaseModel):
     """The model class for argorithms
@@ -42,7 +35,7 @@ class ARgorithm(BaseModel):
         filepath = self.filename[:-3]
         module = importlib.import_module(filepath)
         func = getattr(module , self.function)
-        parameters = self.example if parameters==None else parameters
+        parameters = self.example if not parameters else parameters
         output = func(**parameters)
         res = [x.content for x in output.states]
 
@@ -54,6 +47,7 @@ class ARgorithmManager():
 
     def __init__(self , source):
         self.register = source
+        self.monitor = PerformanceMonitor()
 
     async def list(self):
         """list all argorithms in database
@@ -155,15 +149,16 @@ class ARgorithmManager():
         data = data.__dict__
         lru = None
         start_time = time.time()
-        
-        execution_logger.info(f"id={data['argorithmID']} - Exection request")
+        self.monitor.start_execution(data)
+        logger.debug(f"id={data['argorithmID']} - Exection request")
         if config.CACHING == "ENABLED":
             lru = LRUCache()
             results = await lru.get_data(data)
             if results:
                 process_time = (time.time() - start_time) * 1000
                 formatted_process_time = '{0:.2f}'.format(process_time)
-                execution_logger.info(f"id={data['argorithmID']} - time={formatted_process_time}ms")
+                logger.debug(f"id={data['argorithmID']} - time={formatted_process_time}ms")
+                self.monitor.end_execution(data,"CACHE",results,process_time)
                 return {
                     "status" : "run_cache",
                     "data" : results
@@ -173,10 +168,12 @@ class ARgorithmManager():
             with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
                 buffer.write(function.filedata)
         try:
+            start_time = time.time()
             states =  await function.run_code(data["parameters"])
             process_time = (time.time() - start_time) * 1000
             formatted_process_time = '{0:.2f}'.format(process_time)
-            execution_logger.info(f"id={data['argorithmID']} - time={formatted_process_time}ms")
+            logger.debug(f"id={data['argorithmID']} - time={formatted_process_time}ms")
+            self.monitor.end_execution(data,"NORMAL",states,process_time)
             res = {
                 "status" : "run_parameters",
                 "data" : states
@@ -188,30 +185,44 @@ class ARgorithmManager():
             return res
         except:
             try:
+                start_time = time.time()
                 data['parameters'] = {}
                 states = None
-                execution_logger.warn("Parameters could not be parsed properly")
+                status = "run_example"
                 if lru:
                     results = await lru.get_data(data)
                     if results:
+                        status = "run_cache"
                         states = results
                         process_time = (time.time() - start_time) * 1000
+                    start_time = time.time()
                 if states is None:
                     states = await function.run_code(None)
                     process_time = (time.time() - start_time) * 1000
                     if lru:
                         lru.set_data(data,states)
                 res = {
-                    "status" : "run_example",
+                    "status" : status,
                     "data" : states
                 }
                 if config.DATABASE == "MONGO":
                     os.remove(os.path.join(STORAGE_FOLDER , function.filename))
                 formatted_process_time = '{0:.2f}'.format(process_time)
-                execution_logger.info(f"id={function.argorithmID} - time={formatted_process_time}ms")
+                self.monitor.end_execution(
+                    data,
+                    "CACHE" if status == "run_cache" else "REDIRECTED",
+                    states,
+                    process_time 
+                )
+                logger.debug(f"id={function.argorithmID} - time={formatted_process_time}ms")
                 return res
             except Exception as ex:
-                execution_logger.error(ex)
+                self.monitor.end_execution(
+                    data,
+                    "ERROR",
+                    [],
+                    None
+                )
                 logger.exception(ex)
                 logger.critical(f"id={data['argorithmID']} raised an expection")
                 raise ex

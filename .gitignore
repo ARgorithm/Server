@@ -1,9 +1,12 @@
+# Repository files
 *.pem
 data/
 reloadserver.sh
 refresh
 docker-compose.yml
 app/app/uploads/
+docker-compose.monitor.yml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

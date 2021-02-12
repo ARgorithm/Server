@@ -2,7 +2,7 @@ import time
 from typing import Tuple
 
 import uuid
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge, Histogram, Info , Summary
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -35,7 +35,6 @@ REQUESTS_IN_PROGRESS = Gauge(
     ["method", "path_template"],
 )
 
-
 class MonitoringMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, filter_unhandled_paths: bool = False) -> None:
         super().__init__(app)
@@ -44,7 +43,7 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         method = request.method
         path_template, is_handled_path = self.get_path_template(request)
-
+        logger.info(f"path_template = {path_template}")
         if '/auth' not in request.url.path:
             idem = uuid.uuid4()
             logger.debug(f"rid={idem} start request path={path_template}")
