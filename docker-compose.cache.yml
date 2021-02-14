@@ -32,8 +32,8 @@ services:
             - ADMIN_PASSWORD=${ADMIN_PASSWORD}
             - CACHING=ENABLED
             - REDIS_HOST=redis
-            - REDIS_PORT=${REDIS_PORT}
-            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_PORT=6379
+            - REDIS_PASSWORD=notmypassword
         volumes:
             - uploads:/tmp/argorithm
         depends_on:
