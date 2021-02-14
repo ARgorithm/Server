@@ -66,6 +66,6 @@ class PerformanceMonitor:
             parameters = "PROVIDED"
         EXECUTION_RESPONSES.labels(data['argorithmID'],status).inc()
         if status != "ERROR":
-            EXECUTION_PROCESSING_TIME.labels(data['argorithmID'],parameters,status).observe(time_taken)
+            EXECUTION_PROCESSING_TIME.labels(data['argorithmID'],status).observe(time_taken)
             val = sys.getsizeof(json.dumps(output)) / 1024
             EXECUTION_RESPONSE_SIZE.labels(data['argorithmID']).observe(val)
