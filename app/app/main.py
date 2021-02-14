@@ -47,7 +47,7 @@ from .core import api_setup
 from .monitoring import MonitoringMiddleware,metrics
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.add_middleware(MonitoringMiddleware)
+app.add_middleware(MonitoringMiddleware, filter_unhandled_paths=True)
 app.add_route("/metrics", metrics)
 
 @app.get("/", response_class=HTMLResponse)

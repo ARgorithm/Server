@@ -1,3 +1,5 @@
+"""Implements logger for application
+"""
 import os
 import logging
 

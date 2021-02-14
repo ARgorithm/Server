@@ -53,7 +53,6 @@ class LRUCache:
         while cur:
             cur, keys = await redis.scan(cur, match=f'*{argorithmID}*')
             netlist += keys
-        print(netlist)
         for key in netlist:
             await redis.delete(key.decode())
         redis.close()
