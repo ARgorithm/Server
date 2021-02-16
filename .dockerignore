@@ -5,3 +5,4 @@ reloadserver.sh
 *.yml
 *.yaml
 .env
+grafana/

@@ -17,16 +17,13 @@ EXECUTION_RESPONSES = Counter(
     ["argorithm_id","status"]
 )
 
-TIME_BUCKETS = [0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000]
-
 EXECUTION_PROCESSING_TIME = Histogram(
     "execution_processing_time_milliseconds",
-    "Execution processing time by path in milliseconds",
-    ["argorithm_id","status"],
-    buckets=TIME_BUCKETS
+    "Execution processing time by path in seconds",
+    ["argorithm_id","status"]
 )
 
-RESPONSE_BUCKETS = [ x/100 for x in range(0,2048,256)]
+RESPONSE_BUCKETS = [ x/128 for x in range(0,2048,256)]
 
 EXECUTION_RESPONSE_SIZE = Histogram(
     "execution_response_size_bytes",

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     REDIS_HOST:str="127.0.0.1"
     REDIS_PORT:int=6379
     REDIS_PASSWORD:str=""
+    METRICS_TOKEN:str=""
 
     class Config:
         case_sensitive=True

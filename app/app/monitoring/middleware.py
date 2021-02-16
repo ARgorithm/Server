@@ -28,13 +28,10 @@ RESPONSES = Counter(
     ["path", "status_code"],
 )
 
-TIME_BUCKETS = [0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000]
-
 REQUESTS_PROCESSING_TIME = Histogram(
-    "server_requests_processing_time_milliseconds",
+    "server_requests_processing_time_seconds",
     "Histogram of requests processing time by path",
-    ["path"],
-    buckets=TIME_BUCKETS
+    ["path"]
 )
 EXCEPTIONS = Counter(
     "server_exceptions_total",
@@ -81,13 +78,13 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
             raise e from None
         else:
             REQUESTS_PROCESSING_TIME.labels(path=path_template).observe(
-                (after_time - before_time)*1000
+                after_time - before_time
             )
             RESPONSES.labels(path=path_template, status_code=response.status_code).inc()
         finally:
             REQUESTS_IN_PROGRESS.labels(path=path_template).dec()
 
-            process_time = (time.time() - start_time) * 1000
+            process_time = (time.time() - start_time)
             formatted_process_time = '{0:.2f}'.format(process_time)
             logger.debug(f"rid={idem} completed_in={formatted_process_time}ms status_code={response.status_code}")
         return response

@@ -148,14 +148,14 @@ class ARgorithmManager():
         """
         data = data.__dict__
         lru = None
-        start_time = time.time()
+        start_time = time.perf_counter()
         self.monitor.start_execution(data)
         logger.debug(f"id={data['argorithmID']} - Exection request")
         if config.CACHING == "ENABLED":
             lru = LRUCache()
             results = await lru.get_data(data)
             if results:
-                process_time = (time.time() - start_time) * 1000
+                process_time = (time.perf_counter() - start_time) * 1000
                 formatted_process_time = '{0:.2f}'.format(process_time)
                 logger.debug(f"id={data['argorithmID']} - time={formatted_process_time}ms")
                 self.monitor.end_execution(data,"CACHE",results,process_time)
@@ -168,9 +168,9 @@ class ARgorithmManager():
             with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
                 buffer.write(function.filedata)
         try:
-            start_time = time.time()
+            start_time = time.perf_counter()
             states =  await function.run_code(data["parameters"])
-            process_time = (time.time() - start_time) * 1000
+            process_time = (time.perf_counter() - start_time) * 1000
             formatted_process_time = '{0:.2f}'.format(process_time)
             logger.debug(f"id={data['argorithmID']} - time={formatted_process_time}ms")
             self.monitor.end_execution(data,"NORMAL",states,process_time)
@@ -185,7 +185,7 @@ class ARgorithmManager():
             return res
         except:
             try:
-                start_time = time.time()
+                start_time = time.perf_counter()
                 data['parameters'] = {}
                 states = None
                 status = "run_example"
@@ -194,11 +194,11 @@ class ARgorithmManager():
                     if results:
                         status = "run_cache"
                         states = results
-                        process_time = (time.time() - start_time) * 1000
-                    start_time = time.time()
+                        process_time = (time.perf_counter() - start_time) * 1000
+                    start_time = time.perf_counter()
                 if states is None:
                     states = await function.run_code(None)
-                    process_time = (time.time() - start_time) * 1000
+                    process_time = (time.perf_counter() - start_time) * 1000
                     if lru:
                         lru.set_data(data,states)
                 res = {

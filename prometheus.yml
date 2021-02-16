@@ -9,11 +9,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'server-docker'
-    static_configs:
-      - targets: ['localhost:9323']
-
   - job_name: 'argorithm_server'
     static_configs:
-      - targets: ['argorithm.el.r.appspot.com']
+      - targets: ['arserver']
 
