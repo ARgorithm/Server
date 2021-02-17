@@ -1,3 +1,4 @@
+# Sets up single node server application with in-app storage and no authentication feature
 version: "3"
 services:
     arserver:

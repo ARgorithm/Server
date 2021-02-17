@@ -10,7 +10,8 @@ from datetime import datetime,timedelta
 from jose import JWTError, jwt
 from pydantic import BaseModel 
 
-from ..main import config,logger
+from ..main import config
+from ..monitoring import logger
 from .database import users_db,programmers_db
 from ..model.utils import NotFoundError
 

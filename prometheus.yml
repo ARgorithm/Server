@@ -9,8 +9,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-# at localhost:9323 , it can read your container metrics for now when running local
-  - job_name: 'server-docker'
+  - job_name: 'argorithm_server'
     static_configs:
-      - targets: ['localhost:9323','ec2-13-127-193-38.ap-south-1.compute.amazonaws.com:9323']
+      - targets: ['arserver']
 

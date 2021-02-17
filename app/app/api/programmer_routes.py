@@ -11,7 +11,7 @@ from ..model.utils import Account,NotFoundError,AlreadyExistsError
 
 programmers_api = APIRouter()
 
-@programmers_api.get("/auth/")
+@programmers_api.get("/auth")
 def programmers_info():
     if config.AUTH == "DISABLED":
         raise HTTPException(
