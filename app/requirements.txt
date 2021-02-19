@@ -11,7 +11,7 @@ motor
 tornado
 dnspython
 pytest
-ARgorithmToolkit
+ARgorithmToolkit >= 0.2.0
 PyJWT
 aioredis
 prometheus-client

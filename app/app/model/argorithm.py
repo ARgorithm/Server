@@ -1,12 +1,15 @@
 """The model for argorithms and utility classes to handle all things related to the code and configuration of argorithms
 """
 import os
+import json
 import shutil
 import importlib
 import time
 import logging
 from typing import Optional
 from pydantic import BaseModel,EmailStr,Field
+from ARgorithmToolkit.encoders import StateEncoder
+
 from ..main import STORAGE_FOLDER,config
 from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
 from ..core.cache import LRUCache
@@ -38,7 +41,7 @@ class ARgorithm(BaseModel):
         parameters = self.example if not parameters else parameters
         output = func(**parameters)
         res = [x.content for x in output.states]
-
+        res = json.loads(json.dumps(res,cls=StateEncoder))
         return res
 
 class ARgorithmManager():
