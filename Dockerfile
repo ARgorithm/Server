@@ -36,4 +36,8 @@ ENV REDIS_PASSWORD=
 # If provided, secures /metrics path with bearer authorization
 ENV METRICS_TOKEN=
 
+# If email  service is enabled
+ENV SENDGRID_API_KEY=
+ENV ENDPOINT=localhost
+
 RUN pytest /app/tests

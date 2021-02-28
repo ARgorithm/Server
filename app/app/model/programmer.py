@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from pydantic import BaseModel
 
+from ..main import config
+from ..core.mail import EmailAgent
 from ..monitoring import logger
 from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError
 
@@ -57,10 +59,13 @@ class ProgrammerManager():
                 public_id=str(uuid.uuid4()),
                 admin=admin,
                 join_time=datetime.now(),
-                confirmed=False,
+                confirmed=admin,
                 black_list=False
             )
             await self.register.insert(new_account)
+            if config.MAIL == "ENABLED" and not admin:
+                em = EmailAgent()
+                em.send_verification(new_account.email,new_account.public_id)
             logger.info(f"new programmer - {new_account.email}")
             return True
         except Exception as ex:
@@ -108,3 +113,10 @@ class ProgrammerManager():
         await self.register.update(email,programmer)
         logger.info(f"revoked admin access - {programmer.email}")
         return True
+
+    async def confirm(self,acc:Programmer):
+        """Confirms programmer email"""
+        acc.confirmed = True
+        await self.register.update(acc.email,acc)
+        logger.info(f"confirmed email - {acc.email}")
+        return

@@ -2,6 +2,7 @@
 """
 import os
 import sys
+import socket
 import uvicorn
 import uuid
 import logging
@@ -24,6 +25,8 @@ class Settings(BaseSettings):
     SECRET_KEY:str = "secret"
     AUTH:str="DISABLED"
     MAIL:str="DISABLED"
+    SENDGRID_API_KEY:str=""
+    ENDPOINT=socket.gethostname()
     DATABASE:str="DISABLED"
     DB_ENDPOINT:str="localhost"
     DB_PORT:int=27017

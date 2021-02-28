@@ -54,7 +54,7 @@ async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
         access = acc.log_in(form_data.password)
         if access:
-            token = create_access_token(data={"sub" : acc.email},expires_delta=timedelta(days=1))
+            token = create_access_token(data={"sub" : acc.email},expires_delta=timedelta(days=15))
             return {"access_token": token, "token_type": "bearer"}
         raise ValueError("Incorrect Password")
     except NotFoundError as nfe:
