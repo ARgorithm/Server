@@ -101,3 +101,6 @@ ENV/
 # GCP app engine configs
 app/app.yaml
 app/.gcloudignore
+
+# Migrations
+app/app/migrations/versions/*

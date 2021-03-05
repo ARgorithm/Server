@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from pydantic import BaseModel
 
-from ..main import config
+from ..setting import config
 from ..core.mail import EmailAgent
 from ..monitoring import logger
 from .utils import get_password_hash,Account,NotFoundError,AlreadyExistsError

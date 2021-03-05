@@ -1,7 +1,6 @@
 """database utilities
 """
 import os
-import asyncio
 import json
 from motor import motor_asyncio,motor_tornado
 from databases import Database

@@ -9,8 +9,7 @@ import logging
 from typing import Optional
 from pydantic import BaseModel,EmailStr,Field
 from ARgorithmToolkit.encoders import StateEncoder
-
-from ..main import STORAGE_FOLDER,config
+from ..setting import STORAGE_FOLDER,config
 from .utils import secure_filename,allowed_file,NotFoundError,AlreadyExistsError
 from ..core.cache import LRUCache
 from ..monitoring import logger,PerformanceMonitor

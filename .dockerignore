@@ -6,3 +6,6 @@ reloadserver.sh
 *.yaml
 .env
 grafana/
+
+# Migrations
+app/app/migrations/versions/*
