@@ -37,30 +37,10 @@ class FileSource:
     def __init__(self):
         location = os.path.join(STORAGE_FOLDER,'sqlite.db')
         self.database = Database(f"sqlite:///{location}")
-        
-    async def create(self):
-        """Creates the tables
-        """
-        await self.database.connect()
-        query = """CREATE TABLE argorithm(
-            argorithmID varchar PRIMARY KEY,
-            maintainer varchar,
-            filename varchar,
-            function varchar,
-            description varchar,
-            parameters varchar,
-            example varchar,
-            filedata varchar
-        )"""
-        await self.database.execute(query)
 
     async def list(self):
         """query all data from table
         """
-        try:
-            await self.create()
-        except:
-            pass
         query = "SELECT * FROM argorithm"
         rows = await self.database.fetch_all(query)
         return [clean(row) for row in rows]
@@ -68,10 +48,6 @@ class FileSource:
     async def search(self,key,value):
         """query specific data from table
         """
-        try:
-            await self.create()
-        except:
-            pass
         query = f"SELECT * FROM argorithm where {key}='{value}'"
         rows = await self.database.fetch_all(query)
         return [clean(row) for row in rows]
@@ -79,10 +55,6 @@ class FileSource:
     async def insert(self,data:ARgorithm):
         """insert data into table
         """
-        try:
-            await self.create()
-        except:
-            pass
         query = "INSERT INTO argorithm(_keys_) VALUES (_values_)"
         data = data.__dict__
         keys = []
@@ -201,7 +173,7 @@ else:
 async def admincreds():
     """creates admin account in database
     """
-    if config.DATABASE != "DISABLED":
+    if config.DATABASE == "MONGO":
         await argorithm_db.register.setup_indexes()
         if config.AUTH:
             try:

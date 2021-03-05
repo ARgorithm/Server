@@ -5,6 +5,7 @@ jinja2
 aiofiles
 python-multipart
 databases[sqlite]
+databases[postgresql]
 python-jose
 passlib[bcrypt]
 motor
@@ -16,3 +17,4 @@ PyJWT
 aioredis
 prometheus-client
 sendgrid
+alembic

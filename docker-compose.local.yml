@@ -2,7 +2,7 @@
 version: "3"
 services:
     arserver:
-        image: alanjohn/argorithm-server:latest
+        image: alanjohn/argorithm-server:base
         ports: 
             - 80:80
         volumes:

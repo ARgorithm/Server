@@ -27,7 +27,7 @@ class UserDB(Base):
 class ARgorithmDB(Base):
     __tablename__ = "argorithm"
     
-    maintainer = Column('maintainer',ForeignKey("programmer.email", ondelete=True),nullable=False)
+    maintainer = Column('maintainer',ForeignKey("programmer.email", ondelete="CASCADE"),nullable=False)
     argorithmID = Column('argorithmID',String , primary_key=True)
     filename = Column('filename',String)
     function = Column('function',String,nullable=False)
@@ -46,7 +46,7 @@ class ReportType(enum.Enum):
 class BugReports(Base):
     __tablename__ = "reports"
 
-    argorithmID = Column('argorithm_id' , ForeignKey('argorithm.argorithmID', ondelete=True),nullable=False)
+    argorithmID = Column('argorithm_id' , ForeignKey('argorithm.argorithmID', ondelete="CASCADE"),nullable=False)
     report_id = Column('report_id',String , primary_key = True)
     bug_type = Column('bug_type',Enum(ReportType),nullable=False)
     timestamp = Column('timestamp', DateTime)
