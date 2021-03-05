@@ -1,8 +1,8 @@
-"""start
+"""test
 
-Revision ID: fb29b273453a
+Revision ID: 557cb1c6159f
 Revises: 
-Create Date: 2021-03-05 14:14:15.451950
+Create Date: 2021-03-05 19:49:52.084077
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'fb29b273453a'
+revision = '557cb1c6159f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -42,8 +42,8 @@ def upgrade():
     sa.Column('argorithmID', sa.String(), nullable=False),
     sa.Column('filename', sa.String(), nullable=True),
     sa.Column('function', sa.String(), nullable=False),
-    sa.Column('parameters', sa.String(), nullable=True),
-    sa.Column('example', sa.String(), nullable=True),
+    sa.Column('parameters', sa.JSON(), nullable=True),
+    sa.Column('example', sa.JSON(), nullable=True),
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('filedata', sa.LargeBinary(), nullable=True),
     sa.ForeignKeyConstraint(['maintainer'], ['programmer.email'], ondelete='CASCADE'),
@@ -55,7 +55,7 @@ def upgrade():
     sa.Column('bug_type', sa.Enum('User', 'System', 'Alert', name='reporttype'), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.Column('checked', sa.Boolean(), nullable=True),
-    sa.Column('description', sa.String(), nullable=True),
+    sa.Column('description', sa.JSON(), nullable=True),
     sa.ForeignKeyConstraint(['argorithm_id'], ['argorithm.argorithmID'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('report_id')
     )

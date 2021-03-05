@@ -10,6 +10,7 @@ from ..main import config,STORAGE_FOLDER,app
 from ..model.argorithm import ARgorithm,ARgorithmManager
 from ..model.programmer import Programmer,ProgrammerManager
 from ..model.user import User,UserManager
+from ..model.sql_utils import Base
 from ..model.utils import Account , AlreadyExistsError
 from ..monitoring import logger
 
@@ -18,6 +19,13 @@ admin_account = Account(
     password=config.ADMIN_PASSWORD,
 )
 
+pk = {
+        "argorithm" : "argorithmID",
+        "user" : "email",
+        "programmer" : "email"
+    }
+
+
 def clean(res):
     """Cleans data recieved from SQLITE database
     """
@@ -25,67 +33,60 @@ def clean(res):
         item = {}
         for key,value in res.items():
             try:
-                item[key] = json.loads(value)
-            except:
                 item[key] = value
+            except:
+                pass
         return item
     return None
 
-class FileSource:
-    """manages data storage in sqlite.db
-    """
-    def __init__(self):
-        location = os.path.join(STORAGE_FOLDER,'sqlite.db')
-        self.database = Database(f"sqlite:///{location}")
+class SQLSource:
+    def __init__(self,label):
+        self.database = Database(config.DB_ENDPOINT)
+        self.table = Base.metadata.tables[label]
+        self.label = label
+        self.primary_key = list(self.table.primary_key.columns)[0]
 
     async def list(self):
-        """query all data from table
-        """
-        query = "SELECT * FROM argorithm"
-        rows = await self.database.fetch_all(query)
-        return [clean(row) for row in rows]
+        await self.database.connect()
+        query = self.table.select()
+        value = await self.database.fetch_all(query=query)
+        await self.database.disconnect()
+        print(value)
+        if value:
+            return [clean(row) for row in value]
+        else:
+            return None
+
 
     async def search(self,key,value):
-        """query specific data from table
-        """
-        query = f"SELECT * FROM argorithm where {key}='{value}'"
-        rows = await self.database.fetch_all(query)
-        return [clean(row) for row in rows]
+        await self.database.connect()
+        query = self.table.select().where(self.table.columns[key] == value)
+        value = await self.database.fetch_all(query=query)
+        await self.database.disconnect()
+        if value:
+            return [clean(row) for row in value]
+        else:
+            return None
 
-    async def insert(self,data:ARgorithm):
-        """insert data into table
-        """
-        query = "INSERT INTO argorithm(_keys_) VALUES (_values_)"
-        data = data.__dict__
-        keys = []
-        values = {}
-        for key in data:
-            keys.append(key)
-            if isinstance(data[key],dict):
-                values[key] = json.dumps(data[key])
-            else:
-                values[key] = data[key]
-        query = query.replace('_keys_',','.join(keys))
-        query = query.replace('_values_',','.join([f":{key}" for key in keys]))
-        await self.database.execute_many(query,[values])
+    async def insert(self,data:BaseModel):
+        await self.database.connect()
+        query = self.table.insert()
+        value = data.dict()
+        await self.database.execute(query=query,values=value)
+        await self.database.disconnect()
 
-    async def update(self,key,data:ARgorithm):
-        """update table data
-        """
-        query = f"UPDATE argorithm SET :key = :value WHERE argorithmID={key}"
-        data = data.__dict__
-        
+    async def update(self,key,value):
+        await self.database.connect()
+        query = self.table.update().where(self.primary_key == key)
+        value = value.dict()
+        await self.database.execute(query,values=value)
+        await self.database.disconnect()
+
     async def delete(self,key):
-        """delete table data
-        """
-        query = f"DELETE FROM argorithm WHERE argorithmID='{key}'"
+        await self.database.connect()
+        query = self.table.delete().where(self.primary_key == key)
         await self.database.execute(query)
-
-pk = {
-        "argorithm" : "argorithmID",
-        "user" : "email",
-        "programmer" : "email"
-    }
+        await self.database.disconnect()
 
 class MongoSource:
     """database manager for mongodb database
@@ -162,12 +163,13 @@ class MongoSource:
 argorithm_db , users_db , programmers_db = None , None , None
 if config.DATABASE == "DISABLED":
     logger.info("Connecting to sqlite...")
-    argorithm_db = ARgorithmManager(source=FileSource())
+    argorithm_db = ARgorithmManager(source=SQLSource(label="argorithm"))
+    users_db = UserManager(source=SQLSource(label='user'))
+    programmers_db = ProgrammerManager(source=SQLSource(label="programmer"))
 else:
     argorithm_db = ARgorithmManager(source=MongoSource(label="argorithm"))
-    if config.AUTH != "DISABLED":
-        users_db = UserManager(source=MongoSource(label='user'))
-        programmers_db = ProgrammerManager(source=MongoSource(label="programmer"))
+    users_db = UserManager(source=MongoSource(label='user'))
+    programmers_db = ProgrammerManager(source=MongoSource(label="programmer"))
         
 @app.on_event("startup")
 async def admincreds():
@@ -175,15 +177,11 @@ async def admincreds():
     """
     if config.DATABASE == "MONGO":
         await argorithm_db.register.setup_indexes()
-        if config.AUTH:
-            try:
-                await users_db.register.setup_indexes()
-                await users_db.register_user(admin_account)
-            except Exception as ex:
-                pass
-            try:
-                await programmers_db.register.setup_indexes()
-                await programmers_db.register_programmer(admin_account,admin=True)
-            except Exception as ex:
-                pass
+        await users_db.register.setup_indexes()
+        await programmers_db.register.setup_indexes()
+    try:
+        await programmers_db.register_programmer(admin_account,admin=True)
+        await users_db.register_user(admin_account)
+    except AlreadyExistsError:
+        pass
     logger.info("Admin accounts created")

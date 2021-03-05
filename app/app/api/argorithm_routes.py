@@ -23,9 +23,12 @@ def verify_endpoint():
 async def argorithms_list():
     try:
         data = await argorithm_db.list()
-        for row in data:
-            del row['filedata']
-        return JSONResponse(content=data)
+        if data:
+            for row in data:
+                del row['filedata']
+            return JSONResponse(content=data)
+        else:
+            return JSONResponse(content=[])
     except Exception as ex:
         logger.exception(ex)
         raise HTTPException(

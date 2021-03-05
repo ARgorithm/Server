@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, String, LargeBinary , Boolean , DateTime , ForeignKey , Enum
+from sqlalchemy import Column, String, LargeBinary , Boolean , DateTime , ForeignKey , Enum , Table , JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -31,8 +31,8 @@ class ARgorithmDB(Base):
     argorithmID = Column('argorithmID',String , primary_key=True)
     filename = Column('filename',String)
     function = Column('function',String,nullable=False)
-    parameters = Column('parameters',String)
-    example = Column('example',String)
+    parameters = Column('parameters',JSON)
+    example = Column('example',JSON)
     description = Column('description',String)
     filedata = Column('filedata',LargeBinary , default=None)
 
@@ -51,8 +51,6 @@ class BugReports(Base):
     bug_type = Column('bug_type',Enum(ReportType),nullable=False)
     timestamp = Column('timestamp', DateTime)
     checked = Column('checked' , Boolean)
-    description = Column('description',String)
+    description = Column('description',JSON)
 
     argorithm = relationship(ARgorithmDB)
-
-

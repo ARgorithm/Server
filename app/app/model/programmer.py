@@ -15,7 +15,7 @@ class Programmer(Account):
     public_id:str
     admin:bool
     confirmed:bool
-    join_time:datetime
+    join_date:datetime
     black_list:bool
 
     def describe(self,hide_password=True):
@@ -58,7 +58,7 @@ class ProgrammerManager():
                 password=get_password_hash(data.password),
                 public_id=str(uuid.uuid4()),
                 admin=admin,
-                join_time=datetime.now(),
+                join_date=datetime.now(),
                 confirmed=admin,
                 black_list=False
             )
@@ -68,6 +68,8 @@ class ProgrammerManager():
                 em.send_verification(new_account.email,new_account.public_id)
             logger.info(f"new programmer - {new_account.email}")
             return True
+        except AlreadyExistsError as ae:
+            raise ae
         except Exception as ex:
             logger.exception(ex)
             raise ex
