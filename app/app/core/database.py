@@ -7,9 +7,10 @@ from databases import Database
 from pydantic import BaseModel
 
 from ..main import config,STORAGE_FOLDER,app
-from ..model.argorithm import ARgorithm,ARgorithmManager
-from ..model.programmer import Programmer,ProgrammerManager
-from ..model.user import User,UserManager
+from ..model.argorithm import ARgorithmManager
+from ..model.programmer import ProgrammerManager
+from ..model.user import UserManager
+from ..model.report import ReportManager
 from ..model.sql_utils import Base
 from ..model.utils import Account , AlreadyExistsError
 from ..monitoring import logger
@@ -22,7 +23,8 @@ admin_account = Account(
 pk = {
         "argorithm" : "argorithmID",
         "user" : "email",
-        "programmer" : "email"
+        "programmer" : "email",
+        "reports" : "report_id"
     }
 
 
@@ -162,14 +164,15 @@ class MongoSource:
 
 argorithm_db , users_db , programmers_db = None , None , None
 if config.DATABASE == "DISABLED":
-    logger.info("Connecting to sqlite...")
     argorithm_db = ARgorithmManager(source=SQLSource(label="argorithm"))
     users_db = UserManager(source=SQLSource(label='user'))
     programmers_db = ProgrammerManager(source=SQLSource(label="programmer"))
+    reports_db = ReportManager(source=SQLSource(label="reports"))
 else:
     argorithm_db = ARgorithmManager(source=MongoSource(label="argorithm"))
     users_db = UserManager(source=MongoSource(label='user'))
     programmers_db = ProgrammerManager(source=MongoSource(label="programmer"))
+    reports_db = ReportManager(source=MongoSource(label="reports"))
         
 @app.on_event("startup")
 async def admincreds():
@@ -182,6 +185,6 @@ async def admincreds():
     try:
         await programmers_db.register_programmer(admin_account,admin=True)
         await users_db.register_user(admin_account)
-    except AlreadyExistsError:
+    except Exception:
         pass
     logger.info("Admin accounts created")

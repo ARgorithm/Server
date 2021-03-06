@@ -81,11 +81,6 @@ class ARgorithmManager():
                 while os.path.isfile(os.path.join(STORAGE_FOLDER, final_filename)):
                     final_filename = filename[:-3]+f"_{count}"+filename[-3:]
                     count+=1
-                if config.DATABASE == "MONGO":
-                    pass 
-                else:
-                    with open(os.path.join(STORAGE_FOLDER, final_filename),'wb+') as buffer:
-                        shutil.copyfileobj(file.file,buffer)
                 try:
                     metadata = ARgorithm(
                         maintainer=data['maintainer'],
@@ -96,8 +91,7 @@ class ARgorithmManager():
                         description=data['description'],
                         example=data["example"]
                     )
-                    if config.DATABASE == "MONGO":
-                        metadata.filedata=file.file.read()
+                    metadata.filedata=file.file.read()
                     await self.register.insert(metadata)
                     logger.info(f"inserted new argorithm : {metadata.argorithmID} by {metadata.maintainer}")
                     return True
@@ -126,11 +120,7 @@ class ARgorithmManager():
                     description=data['description'],
                     example=data["example"]
                 )
-            if config.DATABASE == "MONGO":
-                function.filedata = file.file.read()
-            else:
-                with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
-                    shutil.copyfileobj(file.file,buffer)
+            function.filedata = file.file.read()
             await self.register.update(function.argorithmID,function)
             if config.CACHING == "ENABLED":
                 lru = LRUCache()
@@ -166,9 +156,8 @@ class ARgorithmManager():
                     "data" : results
                 }
         function = await self.search(data['argorithmID'])
-        if config.DATABASE == "MONGO":
-            with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
-                buffer.write(function.filedata)
+        with open(os.path.join(STORAGE_FOLDER, function.filename),'wb+') as buffer:
+            buffer.write(function.filedata)
         try:
             start_time = time.perf_counter()
             states =  await function.run_code(data["parameters"])
@@ -182,8 +171,7 @@ class ARgorithmManager():
                 }
             if lru:
                 await lru.set_data(data,states)
-            if config.DATABASE == "MONGO":
-                os.remove(os.path.join(STORAGE_FOLDER , function.filename))
+            os.remove(os.path.join(STORAGE_FOLDER , function.filename))
             return res
         except:
             try:
@@ -207,8 +195,6 @@ class ARgorithmManager():
                     "status" : status,
                     "data" : states
                 }
-                if config.DATABASE == "MONGO":
-                    os.remove(os.path.join(STORAGE_FOLDER , function.filename))
                 formatted_process_time = '{0:.2f}'.format(process_time)
                 self.monitor.end_execution(
                     data,
@@ -216,6 +202,7 @@ class ARgorithmManager():
                     states,
                     process_time 
                 )
+                os.remove(os.path.join(STORAGE_FOLDER , function.filename))
                 logger.debug(f"id={function.argorithmID} - time={formatted_process_time}ms")
                 return res
             except Exception as ex:
@@ -235,10 +222,7 @@ class ARgorithmManager():
         function = await self.search(data['argorithmID'])
         try:
             assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
-            to_be_deleted = function.filename
             await self.register.delete(function.argorithmID)
-            if config.DATABASE != "MONGO":
-                os.remove(os.path.join(STORAGE_FOLDER , to_be_deleted))
             if config.CACHING == "ENABLED":
                 lru = LRUCache()
                 await lru.clear(function.argorithmID)

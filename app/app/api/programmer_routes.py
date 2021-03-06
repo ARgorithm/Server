@@ -52,7 +52,6 @@ async def programmer_register(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="email is already registered"
         ) from aee
     except Exception as ex:
-        raise ex
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="account registration failed"
@@ -95,7 +94,6 @@ async def programmer_login(form_data: OAuth2PasswordRequestForm = Depends()):
             headers={"WWW-Authenticate": "Bearer"},
         )
     except Exception as ex:
-        print(ex)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="login failed"

@@ -1,24 +1,27 @@
 import uuid
+from typing import Optional
+from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel
 
-class UserBugReport(BaseModel):
-    """Bugs reported by user in a particular argorithms"""
+from .sql_utils import ReportType
+
+class BugReport(BaseModel):
+    """Bugs reported by user or system in a particular argorithms"""
     report_id:str = ""
     argorithmID:str = ""
-    user:str = ""
+    bug_type:ReportType
     timestamp:datetime = datetime.now()
-    description:str = ""
+    description:dict = {}
     checked:bool = False
 
-class SystemBugReport(BaseModel):
-    """Reports generated when a particular argorithm causes an issue in mobile application"""
-    report_id:str = ""
-    argorithmID:str = ""
-    system:str = ""
-    timestamp:datetime = datetime.now()
-    description:str = ""
-    checked:bool = False
+class UserDetail(BaseModel):
+    text:str = ""
+    severe:bool = False
+    test_params:Optional[dict] = None
+
+class SystemDetail(BaseModel):
+    text:str = ""
 
 class MetricsAlert(BaseModel):
     """Reports generated from prometheus alerts"""
@@ -30,14 +33,24 @@ class ReportManager():
     def __init__(self,source):
         self.register = source
 
-    async def add_user_report(self,bug:UserBugReport):
+    async def add_user_report(self,argorithm_id,bugdata,user):
+        br = BugReport(
+            report_id=str(uuid.uuid4()),
+            argorithmID=argorithm_id,
+            bug_type=ReportType.User,
+            timestamp=datetime.now(),
+            description=bugdata.dict(),
+            checked=False
+        )
+        await self.register.insert(br)
+
+    async def add_system_report(self,argorithm_id,bugdata):
         pass
 
-    async def add_system_report(self,bug:SystemBugReport):
-        pass
-
-    async def add_alert_report(self,bug:MetricsAlert):
+    async def add_alert_report(self,bugdata):
         pass
 
     async def compile_data(self,argorithm_id:str):
+        """Report generation
+        """
         pass
