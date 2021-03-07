@@ -1,3 +1,5 @@
+<img src="header.svg">
+
 # Server
 Flask based REST API for ARgorithm
 ![Docker](https://github.com/ARgorithm/Server/workflows/Docker/badge.svg)
