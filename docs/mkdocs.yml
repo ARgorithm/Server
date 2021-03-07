@@ -1,0 +1,52 @@
+site_name: ARgorithm Server
+site_description: AR visualizations of data structures
+theme:
+  name: material
+  palette:
+  - scheme: server
+  features:
+  - search.suggest
+  - search.highlight
+  icon:
+    repo: fontawesome/brands/github-alt
+  logo: img/Logo_black.svg
+  favicon: img/favicon.ico
+  language: en
+repo_name: ARgorithm/Server
+repo_url: https://github.com/ARgorithm/Server
+edit_uri: ''
+plugins:
+- search
+- markdownextradata:
+    data: data
+nav:
+- index.md
+- Need help?: help.md
+markdown_extensions:
+- toc:
+    permalink: true
+- markdown.extensions.codehilite:
+    guess_lang: false
+- markdown_include.include:
+    base_path: docs
+- admonition
+- codehilite
+- extra
+- pymdownx.superfences:
+    custom_fences:
+    - name: mermaid
+      class: mermaid
+      format: !!python/name:pymdownx.superfences.fence_div_format ''
+- pymdownx.tabbed
+extra:
+  social:
+  - icon: fontawesome/brands/github-alt
+    link: https://github.com/ARgorithm/Server
+extra_css:
+- css/termynal.css
+- css/custom.css
+extra_javascript:
+- https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js
+- js/termynal.js
+- js/custom.js
+
