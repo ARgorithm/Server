@@ -21,6 +21,7 @@ plugins:
     data: data
 nav:
 - index.md
+- Toolkit docs: https://argorithm.github.io/toolkit/
 - Need help?: help.md
 markdown_extensions:
 - toc:
