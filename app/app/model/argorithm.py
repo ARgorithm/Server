@@ -100,6 +100,8 @@ class ARgorithmManager():
                     logger.exception(ex)
                     raise ex
             raise AssertionError("File should be a python file [.py]")
+        except AlreadyExistsError as ae:
+            raise ae
         except Exception as ex:
             logger.exception(ex)
             raise ex

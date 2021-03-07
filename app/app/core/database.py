@@ -2,9 +2,10 @@
 """
 import os
 import json
-from motor import motor_asyncio,motor_tornado
+from motor import motor_asyncio
 from databases import Database
 from pydantic import BaseModel
+from pymongo import monitoring
 
 from ..main import config,STORAGE_FOLDER,app
 from ..model.argorithm import ARgorithmManager
@@ -13,7 +14,7 @@ from ..model.user import UserManager
 from ..model.report import ReportManager
 from ..model.sql_utils import Base
 from ..model.utils import Account , AlreadyExistsError
-from ..monitoring import logger
+from ..monitoring import logger,DatabaseMonitor
 
 admin_account = Account(
     email=config.ADMIN_EMAIL,
@@ -53,7 +54,6 @@ class SQLSource:
         query = self.table.select()
         value = await self.database.fetch_all(query=query)
         await self.database.disconnect()
-        print(value)
         if value:
             return [clean(row) for row in value]
         else:
@@ -98,10 +98,10 @@ class MongoSource:
         collection(motor.AsyncIOMotorCollection): The collection of documents
     """
     def __init__(self,label):
-        assert label in ['user','programmer','argorithm']
+        assert label in ['user','programmer','argorithm','reports']
         logger.info(f"Connecting to mongodb collection={label}...")
         if "mongodb+srv" in config.DB_ENDPOINT:
-            client = motor_tornado.MotorClient(config.DB_ENDPOINT)
+            client = motor_asyncio.AsyncIOMotorClient(config.DB_ENDPOINT)
         else:    
             client = motor_asyncio.AsyncIOMotorClient(
                 config.DB_ENDPOINT,port=config.DB_PORT,
@@ -169,6 +169,7 @@ if config.DATABASE == "DISABLED":
     programmers_db = ProgrammerManager(source=SQLSource(label="programmer"))
     reports_db = ReportManager(source=SQLSource(label="reports"))
 else:
+    monitoring.register(DatabaseMonitor())
     argorithm_db = ARgorithmManager(source=MongoSource(label="argorithm"))
     users_db = UserManager(source=MongoSource(label='user'))
     programmers_db = ProgrammerManager(source=MongoSource(label="programmer"))

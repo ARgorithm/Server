@@ -9,7 +9,6 @@ databases[postgresql]
 python-jose
 passlib[bcrypt]
 motor
-tornado
 dnspython
 pytest
 ARgorithmToolkit >= 0.2.0
