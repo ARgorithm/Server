@@ -4,8 +4,10 @@ import socket
 from pydantic import BaseSettings
 
 STORAGE_FOLDER = "/tmp/argorithm"
-if not os.path.exists(os.path.join(os.getcwd(),STORAGE_FOLDER)):
+try:
     os.mkdir(STORAGE_FOLDER)
+except FileExistsError:
+    pass
 sys.path.append(STORAGE_FOLDER)
 
 class Settings(BaseSettings):

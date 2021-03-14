@@ -11,7 +11,7 @@ passlib[bcrypt]
 motor
 dnspython
 pytest
-ARgorithmToolkit >= 0.2.0
+ARgorithmToolkit >= 0.2.1
 PyJWT
 aioredis
 prometheus-client
