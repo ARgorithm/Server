@@ -49,16 +49,20 @@ class UserManager():
             existing = await self.search_email(data.email)
             raise AlreadyExistsError("email already registered") 
         except NotFoundError as nfe:
-            pass
-        new_account = User(
-            email=data.email,
-            password=get_password_hash(data.password),
-            public_id=str(uuid.uuid4()),
-            black_list=False
-        )
-        await self.register.insert(new_account)
-        logger.info(f"new user - {new_account.email}")
-        return True
+            new_account = User(
+                email=data.email,
+                password=get_password_hash(data.password),
+                public_id=str(uuid.uuid4()),
+                black_list=False
+            )
+            await self.register.insert(new_account)
+            logger.info(f"new user - {new_account.email}")
+            return True
+        except AlreadyExistsError as ae:
+            raise ae
+        except Exception as ex:
+            logger.exception(ex)
+            raise ex
 
     async def delete_user(self,email:str):
         """deletes existing user

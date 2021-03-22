@@ -5,13 +5,15 @@ jinja2
 aiofiles
 python-multipart
 databases[sqlite]
+databases[postgresql]
 python-jose
 passlib[bcrypt]
 motor
-tornado
 dnspython
 pytest
-ARgorithmToolkit >= 0.2.0
+ARgorithmToolkit >= 0.2.1
 PyJWT
 aioredis
 prometheus-client
+sendgrid
+alembic

@@ -10,9 +10,9 @@ from starlette.status import HTTP_401_UNAUTHORIZED
 from ..main import config
 
 def metrics(request: Request) -> Response:
-    if config.METRICS_TOKEN:
+    if config().METRICS_TOKEN:
         try:
-            assert request.headers['authorization'] == 'Bearer ' + config.METRICS_TOKEN 
+            assert request.headers['authorization'] == 'Bearer ' + config().METRICS_TOKEN 
         except Exception as ae:
             raise HTTPException(
                 status_code=HTTP_401_UNAUTHORIZED,

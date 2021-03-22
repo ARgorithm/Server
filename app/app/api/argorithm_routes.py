@@ -17,15 +17,18 @@ argorithms_api = APIRouter()
 
 @argorithms_api.get("/argorithm")
 def verify_endpoint():
-    return JSONResponse(content={"auth":config.AUTH})
+    return JSONResponse(content={"auth":config().AUTH})
 
 @argorithms_api.get("/argorithms/list")
 async def argorithms_list():
     try:
         data = await argorithm_db.list()
-        for row in data:
-            del row['filedata']
-        return JSONResponse(content=data)
+        if data:
+            for row in data:
+                del row['filedata']
+            return JSONResponse(content=data)
+        else:
+            return JSONResponse(content=[])
     except Exception as ex:
         logger.exception(ex)
         raise HTTPException(
@@ -124,7 +127,7 @@ async def argotihms_update(file: UploadFile = File(...),data:UploadFile = File(.
 
 class DeletionRequest(BaseModel):
     argorithmID:str=""
-    maintainer:str=config.ADMIN_EMAIL
+    maintainer:str=config().ADMIN_EMAIL
 
 @argorithms_api.post("/argorithms/delete")
 async def argorithms_delete(d:DeletionRequest,maintainer:str=Depends(get_current_programmer)):

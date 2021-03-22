@@ -81,12 +81,11 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
                 after_time - before_time
             )
             RESPONSES.labels(path=path_template, status_code=response.status_code).inc()
-        finally:
-            REQUESTS_IN_PROGRESS.labels(path=path_template).dec()
-
             process_time = (time.time() - start_time)
             formatted_process_time = '{0:.2f}'.format(process_time)
             logger.debug(f"rid={idem} completed_in={formatted_process_time}ms status_code={response.status_code}")
+        finally:
+            REQUESTS_IN_PROGRESS.labels(path=path_template).dec()
         return response
 
     @staticmethod

@@ -1,0 +1,12 @@
+route:
+  receiver: webhook
+  routes:
+   - match:
+      severity: info
+     receiver: webhook
+
+receivers:
+- name: webhook
+  webhook_configs:
+  - url: http://arserver/report/alerts
+    

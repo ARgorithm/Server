@@ -13,3 +13,12 @@ scrape_configs:
     static_configs:
       - targets: ['arserver']
 
+rule_files:
+  - '/etc/prometheus/alert.rules.yml'
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - 'alertmanager:9093'
+

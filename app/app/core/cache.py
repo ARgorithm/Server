@@ -16,8 +16,8 @@ def convert_to_value(states):
 class LRUCache:
     
     def __init__(self):
-        self.redis_endpoint = (config.REDIS_HOST,config.REDIS_PORT)
-        self.redis_password = config.REDIS_PASSWORD
+        self.redis_endpoint = (config().REDIS_HOST,config().REDIS_PORT)
+        self.redis_password = config().REDIS_PASSWORD
         
     async def get_data(self,req):
         hashedkey = convert_to_key(req)

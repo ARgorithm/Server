@@ -18,7 +18,7 @@ async def user_token_verify(user:str=Depends(get_current_user)):
 @users_api.post("/users/register")
 async def user_register(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        if config.AUTH != "ENABLED":
+        if config().AUTH != "ENABLED":
             raise AttributeError("Auth disabled")
         new_acc = Account(
             email=form_data.username,
@@ -45,7 +45,7 @@ async def user_register(form_data: OAuth2PasswordRequestForm = Depends()):
 @users_api.post("/users/login",response_model=Token)
 async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        if config.AUTH != "ENABLED":
+        if config().AUTH != "ENABLED":
             raise AttributeError("Auth disabled")
         acc = await users_db.search_email(form_data.username)
         assert not acc.black_list, HTTPException(
@@ -54,7 +54,7 @@ async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
         access = acc.log_in(form_data.password)
         if access:
-            token = create_access_token(data={"sub" : acc.email},expires_delta=timedelta(days=1))
+            token = create_access_token(data={"sub" : acc.email},expires_delta=timedelta(days=15))
             return {"access_token": token, "token_type": "bearer"}
         raise ValueError("Incorrect Password")
     except NotFoundError as nfe:
