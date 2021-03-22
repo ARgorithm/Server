@@ -17,12 +17,13 @@ app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 
 from .setting import config,STORAGE_FOLDER
-from .core import api_setup
+from .core.api_setup import compile_routes
 from .monitoring import MonitoringMiddleware,metrics
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(MonitoringMiddleware, filter_unhandled_paths=True)
 app.add_route("/metrics", metrics)
+compile_routes(app)
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):

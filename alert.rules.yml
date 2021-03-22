@@ -1,0 +1,11 @@
+groups:
+- name: example
+  rules:
+  - alert: Latency
+    expr: sum(increase(server_responses_total{status_code=~"4.."}[5m])) / sum(increase(server_responses_total[5m])) * 100 > 5
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: 404 error found
+      description: Client error overload

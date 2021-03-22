@@ -12,6 +12,8 @@ services:
             - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
         volumes:
             - mongo-data:/data/db
+        logging:
+            driver: none
     redis:
         image: redis
         ports:
@@ -19,6 +21,8 @@ services:
         volumes:
             - ./redis.conf:/usr/local/etc/redis/redis.conf
         command: redis-server /usr/local/etc/redis/redis.conf
+        logging:
+            driver: none
     arserver:
         image: alanjohn/argorithm-server:latest
         ports: 
@@ -50,6 +54,7 @@ services:
         - --config.file=/etc/prometheus/prometheus.yml
         volumes:
         - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
         depends_on:
         - arserver
     grafana:
@@ -62,6 +67,18 @@ services:
         - ./grafana/config.monitoring
         depends_on:
         - prometheus
+        logging:
+            driver: none
+    alertmanager:
+        image: prom/alertmanager
+        ports:
+        - 9093:9093
+        command:
+        - --config.file=/etc/alertmanager.yml
+        volumes:
+        - ./alertmanager.yml:/etc/alertmanager.yml
+        depends_on:
+        - arserver
 volumes:
     mongo-data:
         driver: local
