@@ -2,8 +2,9 @@ import os
 import sys
 import socket
 from pydantic import BaseSettings
+import tempfile
 
-STORAGE_FOLDER = "/tmp/argorithm"
+STORAGE_FOLDER = os.path.join(tempfile.gettempdir(), "argorithm")
 try:
     os.mkdir(STORAGE_FOLDER)
 except FileExistsError:

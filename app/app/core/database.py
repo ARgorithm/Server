@@ -183,7 +183,7 @@ class TestSource:
     async def search(self,key,value):
         for model in self.data:
             if model[key] == value:
-                return model
+                return [model]
         return None
 
     async def delete(self,key):
