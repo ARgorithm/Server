@@ -36,3 +36,31 @@ def test_programmer(monkeypatch):
     response =client.post("/programmers/verify", headers = headers)
     assert response.status_code == 200
     
+def test_user(monkeypatch):
+    monkeypatch.setenv("AUTH", "ENABLED")
+    client = TestClient(app)
+    account = {"username" : "user@email.com", "password" : "test"}
+    response = client.post("/users/register", data = account)
+    assert response.status_code == 200
+    response = client.post("/users/register", data = account)
+    assert response.status_code == 409
+
+    notexisting = {"username" : "user@gmail.com", "password" : "test"}
+    wrongpassword = {"username" : "user@email.com", "password" : "test1"}
+    response = client.post("/users/login", data = notexisting)
+    assert response.status_code == 404
+    response = client.post("/users/login", data = wrongpassword)
+    assert response.status_code == 401
+    response = client.post("/users/login", data = account)
+    assert response.status_code == 200
+    content = json.loads(response.content)
+    assert content["token_type"] == "bearer"
+
+    token = content["access_token"]
+    dummy = "faultyjwt"
+    headers = {"authorization" : "Bearer " + dummy}
+    response =client.post("/users/verify", headers = headers)
+    assert response.status_code == 401
+    headers = {"authorization" : "Bearer " + token}
+    response =client.post("/users/verify", headers = headers)
+    assert response.status_code == 200
