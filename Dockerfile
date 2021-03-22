@@ -20,4 +20,6 @@ ENV PYTHONPATH=/app
 
 EXPOSE 80
 
+RUN pytest tests
+
 CMD ["/start.sh"]

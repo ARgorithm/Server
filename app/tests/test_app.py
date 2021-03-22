@@ -1,8 +1,10 @@
+import json
 from fastapi.testclient import TestClient
-from app.main import app,config
+from app.main import app
 
-client = TestClient(app)
-
-def test_read():
-    response = client.get("/argorithms/list")
+def test_init():
+    client = TestClient(app)
+    response = client.get("/argorithm")
     assert response.status_code == 200
+    content = json.loads(response.content)
+    assert content['auth'] == "DISABLED"

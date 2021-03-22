@@ -162,8 +162,50 @@ class MongoSource:
         index = pk[self.label]
         result = await self.collection.delete_many({index:key})        
 
+class TestSource:
+    """
+    Datasource for testing functionalities without database connectivity
+
+    Attributes:
+        data (dict): The data object that contains emulates database storage
+        label (str) : The label for this datasource
+    """
+    def __init__(self,label):
+        self.data = []
+        self.label = label
+    
+    async def list(self):
+        return self.data
+
+    async def insert(self,model):
+        self.data.append(model.__dict__)
+
+    async def search(self,key,value):
+        for model in self.data:
+            if model[key] == value:
+                return model
+        return None
+
+    async def delete(self,key):
+        self.data = [x for x in self.data if x[pk[self.label]] != key]
+
+    async def update(self,key,value):
+        new_data = []
+        for x in self.data:
+            if x[pk[self.label]] == key:
+                new_data.append(value)
+            else:
+                new_data.append(x)
+        self.data = new_data
+
 argorithm_db , users_db , programmers_db = None , None , None
-if config.DATABASE == "DISABLED":
+
+if config.TESTING == "ENABLED":
+    argorithm_db = ARgorithmManager(source=TestSource(label="argorithm"))
+    users_db = UserManager(source=TestSource(label='user'))
+    programmers_db = ProgrammerManager(source=TestSource(label="programmer"))
+    reports_db = ReportManager(source=TestSource(label="reports"))
+elif config.DATABASE == "DISABLED":
     argorithm_db = ARgorithmManager(source=SQLSource(label="argorithm"))
     users_db = UserManager(source=SQLSource(label='user'))
     programmers_db = ProgrammerManager(source=SQLSource(label="programmer"))

@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     REDIS_PORT:int=6379
     REDIS_PASSWORD:str=""
     METRICS_TOKEN:str=""
+    TESTING:str="DISABLED"
 
     class Config:
         case_sensitive=True
