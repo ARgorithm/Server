@@ -63,7 +63,7 @@ class ProgrammerManager():
                 black_list=False
             )
             await self.register.insert(new_account)
-            if config.MAIL == "ENABLED" and not admin:
+            if config().MAIL == "ENABLED" and not admin:
                 em = EmailAgent()
                 em.send_verification(new_account.email,new_account.public_id)
             logger.info(f"new programmer - {new_account.email}")

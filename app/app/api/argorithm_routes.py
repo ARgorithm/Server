@@ -17,7 +17,7 @@ argorithms_api = APIRouter()
 
 @argorithms_api.get("/argorithm")
 def verify_endpoint():
-    return JSONResponse(content={"auth":config.AUTH})
+    return JSONResponse(content={"auth":config().AUTH})
 
 @argorithms_api.get("/argorithms/list")
 async def argorithms_list():
@@ -127,7 +127,7 @@ async def argotihms_update(file: UploadFile = File(...),data:UploadFile = File(.
 
 class DeletionRequest(BaseModel):
     argorithmID:str=""
-    maintainer:str=config.ADMIN_EMAIL
+    maintainer:str=config().ADMIN_EMAIL
 
 @argorithms_api.post("/argorithms/delete")
 async def argorithms_delete(d:DeletionRequest,maintainer:str=Depends(get_current_programmer)):

@@ -13,7 +13,7 @@ programmers_api = APIRouter()
 
 @programmers_api.get("/auth")
 def programmers_info():
-    if config.AUTH == "DISABLED":
+    if config().AUTH == "DISABLED":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="authentication disabled"
@@ -27,7 +27,7 @@ async def programmer_token_verify(user:str=Depends(get_current_programmer)):
 @programmers_api.post("/programmers/register")
 async def programmer_register(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        if config.AUTH != "ENABLED":
+        if config().AUTH != "ENABLED":
             raise AttributeError("Auth disabled")
         new_acc = Account(
             email=form_data.username,
@@ -60,14 +60,14 @@ async def programmer_register(form_data: OAuth2PasswordRequestForm = Depends()):
 @programmers_api.post("/programmers/login" , response_model=Token)
 async def programmer_login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        if config.AUTH != "ENABLED":
+        if config().AUTH != "ENABLED":
             raise AttributeError("Auth disabled")
         acc = await programmers_db.search_email(form_data.username)
         assert not acc.black_list, HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="blacklisted credentials"
         )
-        if config.MAIL=='ENABLED' and not acc.confirmed:
+        if config().MAIL=='ENABLED' and not acc.confirmed:
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail="verification required"

@@ -112,7 +112,7 @@ class ARgorithmManager():
         """
         function = await self.search(data['argorithmID'])
         try:
-            assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
+            assert data['maintainer'] == function.maintainer or data['maintainer'] == config().ADMIN_EMAIL , AssertionError("Authorization failed")
             function = ARgorithm(
                     maintainer=function.maintainer,
                     argorithmID=data['argorithmID'],
@@ -124,7 +124,7 @@ class ARgorithmManager():
                 )
             function.filedata = file.file.read()
             await self.register.update(function.argorithmID,function)
-            if config.CACHING == "ENABLED":
+            if config().CACHING == "ENABLED":
                 lru = LRUCache()
                 await lru.clear(function.argorithmID)
             logger.info(f"inserted new argorithm : {function.argorithmID} by {data['maintainer']}")
@@ -145,7 +145,7 @@ class ARgorithmManager():
         start_time = time.perf_counter()
         self.monitor.start_execution(data)
         logger.debug(f"id={data['argorithmID']} - Exection request")
-        if config.CACHING == "ENABLED":
+        if config().CACHING == "ENABLED":
             lru = LRUCache()
             results = await lru.get_data(data)
             if results:
@@ -223,9 +223,9 @@ class ARgorithmManager():
         """
         function = await self.search(data['argorithmID'])
         try:
-            assert data['maintainer'] == function.maintainer or data['maintainer'] == config.ADMIN_EMAIL , AssertionError("Authorization failed")
+            assert data['maintainer'] == function.maintainer or data['maintainer'] == config().ADMIN_EMAIL , AssertionError("Authorization failed")
             await self.register.delete(function.argorithmID)
-            if config.CACHING == "ENABLED":
+            if config().CACHING == "ENABLED":
                 lru = LRUCache()
                 await lru.clear(function.argorithmID)
             logger.info(f"deleted argorithm : {function.argorithmID} by {data['maintainer']}")

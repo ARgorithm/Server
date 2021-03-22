@@ -35,4 +35,5 @@ class Settings(BaseSettings):
     class Config:
         case_sensitive=True
 
-config = Settings()
+def config():
+    return Settings()

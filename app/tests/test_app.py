@@ -8,3 +8,12 @@ def test_init():
     assert response.status_code == 200
     content = json.loads(response.content)
     assert content['auth'] == "DISABLED"
+
+def test_monkey(monkeypatch):
+    
+    monkeypatch.setenv("AUTH","ENABLED")
+    client = TestClient(app)
+    response = client.get("/argorithm")
+    assert response.status_code == 200
+    content = json.loads(response.content)
+    assert content['auth'] == "ENABLED"

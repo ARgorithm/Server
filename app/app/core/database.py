@@ -17,8 +17,8 @@ from ..model.utils import Account , AlreadyExistsError
 from ..monitoring import logger,DatabaseMonitor
 
 admin_account = Account(
-    email=config.ADMIN_EMAIL,
-    password=config.ADMIN_PASSWORD,
+    email=config().ADMIN_EMAIL,
+    password=config().ADMIN_PASSWORD,
 )
 
 pk = {
@@ -44,7 +44,7 @@ def clean(res):
 
 class SQLSource:
     def __init__(self,label):
-        self.database = Database(config.DB_ENDPOINT)
+        self.database = Database(config().DB_ENDPOINT)
         self.table = Base.metadata.tables[label]
         self.label = label
         self.primary_key = list(self.table.primary_key.columns)[0]
@@ -100,13 +100,13 @@ class MongoSource:
     def __init__(self,label):
         assert label in ['user','programmer','argorithm','reports']
         logger.info(f"Connecting to mongodb collection={label}...")
-        if "mongodb+srv" in config.DB_ENDPOINT:
-            client = motor_asyncio.AsyncIOMotorClient(config.DB_ENDPOINT)
+        if "mongodb+srv" in config().DB_ENDPOINT:
+            client = motor_asyncio.AsyncIOMotorClient(config().DB_ENDPOINT)
         else:    
             client = motor_asyncio.AsyncIOMotorClient(
-                config.DB_ENDPOINT,port=config.DB_PORT,
-                username=config.DB_USERNAME,
-                password=config.DB_PASSWORD
+                config().DB_ENDPOINT,port=config().DB_PORT,
+                username=config().DB_USERNAME,
+                password=config().DB_PASSWORD
             )
         database = client['argorithmdb']
         self.label = label
@@ -200,12 +200,12 @@ class TestSource:
 
 argorithm_db , users_db , programmers_db = None , None , None
 
-if config.TESTING == "ENABLED":
+if config().TESTING == "ENABLED":
     argorithm_db = ARgorithmManager(source=TestSource(label="argorithm"))
     users_db = UserManager(source=TestSource(label='user'))
     programmers_db = ProgrammerManager(source=TestSource(label="programmer"))
     reports_db = ReportManager(source=TestSource(label="reports"))
-elif config.DATABASE == "DISABLED":
+elif config().DATABASE == "DISABLED":
     argorithm_db = ARgorithmManager(source=SQLSource(label="argorithm"))
     users_db = UserManager(source=SQLSource(label='user'))
     programmers_db = ProgrammerManager(source=SQLSource(label="programmer"))
@@ -221,7 +221,7 @@ else:
 async def admincreds():
     """creates admin account in database
     """
-    if config.DATABASE == "MONGO":
+    if config().DATABASE == "MONGO":
         await argorithm_db.register.setup_indexes()
         await users_db.register.setup_indexes()
         await programmers_db.register.setup_indexes()

@@ -39,7 +39,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = app_config.DB_ENDPOINT
+    url = app_config().DB_ENDPOINT
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -59,7 +59,7 @@ def run_migrations_online():
 
     """
     alembic_config = config.get_section(config.config_ini_section)
-    alembic_config['sqlalchemy.url'] = app_config.DB_ENDPOINT
+    alembic_config['sqlalchemy.url'] = app_config().DB_ENDPOINT
     connectable = engine_from_config(
         alembic_config,
         prefix="sqlalchemy.",
