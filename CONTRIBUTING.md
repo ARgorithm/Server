@@ -1,0 +1,1 @@
+Please read the [Contributing guidelines](https://argorithm.github.io/Server/contributing/) in the documentation site.

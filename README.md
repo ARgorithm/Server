@@ -11,3 +11,8 @@ For testing , pytest has been used and all the tests can be found in `tests` fol
 ## Usage
 
 you can go to `/docs` route to get the FastAPI Swagger UI to explore all the routes. You can also check out the documentation of ARgorithmToolkit at readthedocs for more details
+
+### Contact
+
+**Join our discord Server** : [![Discord Server](https://img.shields.io/discord/854962642790383648.svg?label=Discord&logo=Discord&colorB=7289da&style=for-the-badge)](https://discord.gg/W7QPh35snP)
+
